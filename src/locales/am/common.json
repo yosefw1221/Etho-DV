@@ -1,0 +1,94 @@
+{
+  "navigation": {
+    "home": "መነሻ",
+    "apply": "አሁን ያመልክቱ",
+    "login": "ግባ",
+    "register": "ይመዝገቡ",
+    "dashboard": "ዳሽቦርድ",
+    "logout": "ውጣ"
+  },
+  "hero": {
+    "title": "የዲቪ ሎተሪ ማመልከቻ ቀላል ተደርጓል",
+    "subtitle": "ለኢትዮጵያዊያን ተጠቃሚዎች ፕሮፌሽናል የዲቪ ሎተሪ ማመልከቻ አገልግሎት። ፈጣን፣ አስተማማኝ እና በ1 ዶላር ብቻ።",
+    "apply_button": "አሁን ያመልክቱ - $1 ዶላር",
+    "agent_button": "ወኪል ምዝገባ"
+  },
+  "features": {
+    "title": "ለምን ኢቶ-ዲቪን ይመርጣሉ?",
+    "affordable": {
+      "title": "ተመጣጣኝ ዋጋ",
+      "description": "በአንድ ማመልከቻ 1 ዶላር ብቻ። ለወኪሎች ልዩ ተመን።"
+    },
+    "fast": {
+      "title": "ፈጣን ሂደት",
+      "description": "ማመልከቻዎን በደቂቃዎች ውስጥ ይሙሉ፣ በሰዓቶች አይደለም።"
+    },
+    "accurate": {
+      "title": "100% ትክክለኛ",
+      "description": "ፕሮፌሽናል የቅጽ መሙላት ከማረጋገጫ ሰነድ ጋር።"
+    }
+  },
+  "languages": {
+    "title": "በእርስዎ ቋንቋ ይገኛል",
+    "english": "English",
+    "amharic": "አማርኛ",
+    "tigrigna": "ትግርኛ",
+    "oromifa": "Oromifa"
+  },
+  "auth": {
+    "login": "ግባ",
+    "register": "ይመዝገቡ",
+    "email": "ኢሜይል",
+    "password": "የይለፍ ቃል",
+    "confirm_password": "የይለፍ ቃል ያረጋግጡ",
+    "business_name": "የንግድ ስም",
+    "user_type": "እኔ እሆናለሁ...",
+    "individual_user": "ግለሰብ ተጠቃሚ",
+    "agent": "ወኪል/ንግድ",
+    "login_button": "ግባ",
+    "register_button": "መለያ ፍጠር",
+    "already_have_account": "መለያ አሎት?",
+    "dont_have_account": "መለያ የሎትም?",
+    "required_field": "ይህ መስክ ያስፈልጋል",
+    "invalid_email": "ትክክለኛ ኢሜይል ያስገቡ",
+    "password_min": "የይለፍ ቃል ቢያንስ 6 ቁምፊዎች ሊሆን ይገባል",
+    "passwords_no_match": "የይለፍ ቃሎች አይዛመዱም"
+  },
+  "form": {
+    "personal_info": "የግል መረጃ",
+    "contact_info": "የመገናኛ መረጃ",
+    "family_info": "የቤተሰብ መረጃ",
+    "review": "ይመልከቱ እና ያስገቡ",
+    "first_name": "የመጀመሪያ ስም",
+    "middle_name": "የአባት ስም (አማራጭ)",
+    "last_name": "የአያት ስም",
+    "date_of_birth": "የትውልድ ቀን",
+    "place_of_birth": "የትውልድ ቦታ",
+    "gender": "ጾታ",
+    "male": "ወንድ",
+    "female": "ሴት",
+    "passport_number": "የፓስፖርት ቁጥር",
+    "passport_expiry": "የፓስፖርት ማብቂያ ቀን",
+    "phone": "የስልክ ቁጥር",
+    "address": "አድራሻ",
+    "education": "የትምህርት ደረጃ",
+    "marital_status": "የጋብቻ ሁኔታ",
+    "single": "ያላገባ",
+    "married": "ያገባ",
+    "upload_photo": "ፎቶ ይላኩ",
+    "next": "ቀጥሎ",
+    "previous": "የቀድሞው",
+    "submit": "ላክ",
+    "progress": "ደረጃ {{current}} ከ {{total}}"
+  },
+  "help": {
+    "passport_number": "የፓስፖርት ቁጥሩን በፓስፖርትዎ ላይ እንደሚታየው ይሙሉ",
+    "date_format": "ቅርጸት: ቀን/ወር/ዓመት (ምሳሌ: 15/03/1990)",
+    "photo_requirements": "መስፈርቶች: ነጭ ጀርባ፣ የቅርብ ጊዜ ፎቶ፣ ቢያንስ 600x600px",
+    "education_help": "የሁለተኛ ደረጃ ትምህርት ማሰናጃ = 12 ዓመት የመደበኛ ትምህርት ማጠናቀቅ",
+    "place_of_birth": "ከተማ እና ሀገር ይሙሉ (ምሳሌ: አዲስ አበባ፣ ኢትዮጵያ)"
+  },
+  "footer": {
+    "copyright": "© 2024 ኢቶ-ዲቪ። ፕሮፌሽናል የዲቪ ሎተሪ ማመልከቻ አገልግሎት።"
+  }
+}

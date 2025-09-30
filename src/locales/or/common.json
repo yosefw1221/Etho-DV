@@ -1,0 +1,94 @@
+{
+  "navigation": {
+    "home": "Mana",
+    "apply": "Amma Apply Godhii",
+    "login": "Seeni",
+    "register": "Galmaa'i",
+    "dashboard": "Dashboard",
+    "logout": "Ba'i"
+  },
+  "hero": {
+    "title": "DV Lottery Application Salphaa Taasifame",
+    "subtitle": "Ethiopian fayyadamtoota DV lottery application professional tajaajila. Saffisaa, amanamaas fi $1 USD qofa.",
+    "apply_button": "Amma Apply Godhii - $1 USD",
+    "agent_button": "Agent Galmaa'insaa"
+  },
+  "features": {
+    "title": "Maaliif Etho-DV Filattaa?",
+    "affordable": {
+      "title": "Gatii Madaalawaa",
+      "description": "Application tokko $1 USD qofa. Agents dhaaf gatii addaa."
+    },
+    "fast": {
+      "title": "Adeemsa Saffisaa",
+      "description": "Application kee daqiiqoota keessatti xumurii, sa'aatii hin taane."
+    },
+    "accurate": {
+      "title": "100% Sirrii",
+      "description": "Professional foormii guutuu ragaa mirkaneessa wajjin."
+    }
+  },
+  "languages": {
+    "title": "Afaan Keetiin Ni Argama",
+    "english": "English",
+    "amharic": "አማርኛ",
+    "tigrigna": "ትግርኛ", 
+    "oromifa": "Oromifa"
+  },
+  "auth": {
+    "login": "Seeni",
+    "register": "Galmaa'i", 
+    "email": "Email",
+    "password": "Password",
+    "confirm_password": "Password Mirkaneessi",
+    "business_name": "Maqaa Daldalaa",
+    "user_type": "Ani...",
+    "individual_user": "Fayyadamaa Dhuunfaa",
+    "agent": "Agent/Daldala",
+    "login_button": "Seeni",
+    "register_button": "Account Uumii",
+    "already_have_account": "Account qabdaa?",
+    "dont_have_account": "Account hin qabdu?",
+    "required_field": "Kun barbaachisaa dha",
+    "invalid_email": "Email sirrii galchii",
+    "password_min": "Password yoo xiqqaate qubee 6 ta'uu qaba",
+    "passwords_no_match": "Passwordoonni hin walsimne"
+  },
+  "form": {
+    "personal_info": "Odeeffama Dhuunfaa",
+    "contact_info": "Odeeffama Quunnamtii",
+    "family_info": "Odeeffama Maatii",
+    "review": "Ilaalii fi Galchi",
+    "first_name": "Maqaa Jalqabaa",
+    "middle_name": "Maqaa Giddu (Filannoo)",
+    "last_name": "Maqaa Maatii",
+    "date_of_birth": "Guyyaa Dhaloota",
+    "place_of_birth": "Iddoo Dhaloota",
+    "gender": "Saala",
+    "male": "Dhiira",
+    "female": "Dubartii",
+    "passport_number": "Lakkoofsa Passport",
+    "passport_expiry": "Guyyaa Passport Dhumuu",
+    "phone": "Lakkoofsa Bilbilaa",
+    "address": "Teessoo",
+    "education": "Sadarkaa Barumsa",
+    "marital_status": "Haala Gaa'elaa",
+    "single": "Kan Hin Fuune",
+    "married": "Kan Fuudhe",
+    "upload_photo": "Suuraa Ergii",
+    "next": "Itti Aanee",
+    "previous": "Dura",
+    "submit": "Ergii",
+    "progress": "Tarkaanfii {{current}} {{total}} keessaa"
+  },
+  "help": {
+    "passport_number": "Lakkoofsa passport kee passport kee irratti mul'atu galchi",
+    "date_format": "Bifa: GG/JJ/WWWW (Fakkeenya: 15/03/1990)",
+    "photo_requirements": "Ulaagaalee: Duubaan adii, suuraa dhiyeenyaa, yoo xiqqaate 600x600px",
+    "education_help": "Digrii secondary school = waggaa 12 barumsa idilee xumuruu",
+    "place_of_birth": "Magaalaa fi biyya galchi (Fakkeenya: Finfinnee, Itoophiyaa)"
+  },
+  "footer": {
+    "copyright": "© 2024 Etho-DV. Professional DV Lottery Application Service."
+  }
+}

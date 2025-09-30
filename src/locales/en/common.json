@@ -1,0 +1,94 @@
+{
+  "navigation": {
+    "home": "Home",
+    "apply": "Apply Now",
+    "login": "Login",
+    "register": "Register",
+    "dashboard": "Dashboard",
+    "logout": "Logout"
+  },
+  "hero": {
+    "title": "DV Lottery Application Made Simple",
+    "subtitle": "Professional DV lottery application service for Ethiopian users. Fast, reliable, and affordable at just $1 USD.",
+    "apply_button": "Apply Now - $1 USD",
+    "agent_button": "Agent Registration"
+  },
+  "features": {
+    "title": "Why Choose Etho-DV?",
+    "affordable": {
+      "title": "Affordable Price",
+      "description": "Only $1 USD per application. Special rates for agents."
+    },
+    "fast": {
+      "title": "Fast Processing",
+      "description": "Complete your application in minutes, not hours."
+    },
+    "accurate": {
+      "title": "100% Accurate",
+      "description": "Professional form completion with confirmation document."
+    }
+  },
+  "languages": {
+    "title": "Available in Your Language",
+    "english": "English",
+    "amharic": "አማርኛ",
+    "tigrigna": "ትግርኛ",
+    "oromifa": "Oromifa"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "confirm_password": "Confirm Password",
+    "business_name": "Business Name",
+    "user_type": "I am a...",
+    "individual_user": "Individual User",
+    "agent": "Agent/Business",
+    "login_button": "Login",
+    "register_button": "Create Account",
+    "already_have_account": "Already have an account?",
+    "dont_have_account": "Don't have an account?",
+    "required_field": "This field is required",
+    "invalid_email": "Please enter a valid email",
+    "password_min": "Password must be at least 6 characters",
+    "passwords_no_match": "Passwords do not match"
+  },
+  "form": {
+    "personal_info": "Personal Information",
+    "contact_info": "Contact Information", 
+    "family_info": "Family Information",
+    "review": "Review & Submit",
+    "first_name": "First Name",
+    "middle_name": "Middle Name (Optional)",
+    "last_name": "Last Name",
+    "date_of_birth": "Date of Birth",
+    "place_of_birth": "Place of Birth",
+    "gender": "Gender",
+    "male": "Male",
+    "female": "Female",
+    "passport_number": "Passport Number",
+    "passport_expiry": "Passport Expiry Date",
+    "phone": "Phone Number",
+    "address": "Address",
+    "education": "Education Level",
+    "marital_status": "Marital Status",
+    "single": "Single",
+    "married": "Married",
+    "upload_photo": "Upload Photo",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "progress": "Step {{current}} of {{total}}"
+  },
+  "help": {
+    "passport_number": "Enter your passport number exactly as shown on your passport",
+    "date_format": "Format: DD/MM/YYYY (Example: 15/03/1990)",
+    "photo_requirements": "Requirements: White background, recent photo, 600x600px minimum",
+    "education_help": "High school degree = 12 years of formal education completed",
+    "place_of_birth": "Enter city and country (Example: Addis Ababa, Ethiopia)"
+  },
+  "footer": {
+    "copyright": "© 2024 Etho-DV. Professional DV Lottery Application Service."
+  }
+}

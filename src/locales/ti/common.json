@@ -1,0 +1,94 @@
+{
+  "navigation": {
+    "home": "ገጽ መዳህላሊ",
+    "apply": "ሕጂ ተመዝገብ",
+    "login": "እቶ",
+    "register": "ተመዝገብ",
+    "dashboard": "ዳሽቦርድ",
+    "logout": "ውጻእ"
+  },
+  "hero": {
+    "title": "የዲቪ ሎተሪ ምዝገባ ቀሊል ተገብሮ",
+    "subtitle": "ለኢትዮጵያውያን ተጠቀምቲ ፕሮፈሽናል የዲቪ ሎተሪ ምዝገባ አገልግሎት። ቅልጡፍ፣ ውሑስ እናም ብ1 ዶላር ጥራይ።",
+    "apply_button": "ሕጂ ተመዝገብ - $1 ዶላር",
+    "agent_button": "ወኪል ምዝገባ"
+  },
+  "features": {
+    "title": "ንምንታይ ኢቶ-ዲቪ ትምረጽ?",
+    "affordable": {
+      "title": "ተመጣጣኒ ዋጋ",
+      "description": "ብሓደ ምዝገባ 1 ዶላር ጥራይ። ንወኪላት ፍሉይ ተመን።"
+    },
+    "fast": {
+      "title": "ቅልጡፍ ኣሰራርሓ",
+      "description": "ምዝገባኹም ብደቓይቕ ውስጢ ተመላአዎ፣ ብሰዓታት ኣይኮነን።"
+    },
+    "accurate": {
+      "title": "100% ቅኑዕ",
+      "description": "ፕሮፈሽናል የቅጽ መመላእ ምስ ምርግጋጽ ሰነድ።"
+    }
+  },
+  "languages": {
+    "title": "ብቋንቋኹም ይርከብ",
+    "english": "English",
+    "amharic": "አማርኛ", 
+    "tigrigna": "ትግርኛ",
+    "oromifa": "Oromifa"
+  },
+  "auth": {
+    "login": "እቶ",
+    "register": "ተመዝገብ",
+    "email": "ኢሜይል",
+    "password": "ምስጢራዊ ቃል",
+    "confirm_password": "ምስጢራዊ ቃል ኣረጋግጽ",
+    "business_name": "የንግዲ ስም",
+    "user_type": "ኣነ እየ...",
+    "individual_user": "ውልቀ ተጠቃሚ",
+    "agent": "ወኪል/ንግዲ",
+    "login_button": "እቶ",
+    "register_button": "ሕሳብ ፍጠር",
+    "already_have_account": "ሕሳብ ኣሎካ?",
+    "dont_have_account": "ሕሳብ የብልካን?",
+    "required_field": "እዚ ዓውዲ የድሊ",
+    "invalid_email": "ቅኑዕ ኢሜይል ኣእቶ",
+    "password_min": "ምስጢራዊ ቃል ብውሑዱ 6 ፊደላት ክኸውን ኣለዎ",
+    "passwords_no_match": "ምስጢራዊ ቃላት ኣይሰማመዑን"
+  },
+  "form": {
+    "personal_info": "ውልቃዊ ሓበሬታ",
+    "contact_info": "የመራኸቢ ሓበሬታ",
+    "family_info": "የቤተሰብ ሓበሬታ", 
+    "review": "ርአይ እናይዳሓ ኣቕርብ",
+    "first_name": "ቀዳማይ ስም",
+    "middle_name": "የኣቦ ስም (ግዳይ)",
+    "last_name": "የሸውዓተ ስም",
+    "date_of_birth": "የትውልዲ ዕለት",
+    "place_of_birth": "የትውልዲ ቦታ",
+    "gender": "ፆታ",
+    "male": "ተባዕታይ",
+    "female": "ኣንስተይቲ",
+    "passport_number": "የፓስፖርት ቁጽሪ",
+    "passport_expiry": "የፓስፖርት ውዳኣ ዕለት",
+    "phone": "የስልኪ ቁጽሪ",
+    "address": "ኣድራሻ",
+    "education": "የትምህርቲ ደረጃ",
+    "marital_status": "የጋብቻ ኩነታት",
+    "single": "ብርቱዕ",
+    "married": "ተመርዒሱ",
+    "upload_photo": "ስእሊ ስደድ",
+    "next": "ዝቕጽል",
+    "previous": "ዝሓለፈ",
+    "submit": "ስደድ",
+    "progress": "ደረጃ {{current}} ካብ {{total}}"
+  },
+  "help": {
+    "passport_number": "የፓስፖርት ቁጽሪ ብፓስፖርትኩም ዝርኣ ዝነሰ ተመላእዎ",
+    "date_format": "ቅርጸት: ዕለት/ወርሒ/ዓመት (ኣብነት: 15/03/1990)", 
+    "photo_requirements": "ሕሳባት: ጻዕዳ ሕቶ፣ ናይ ቀረባ እዋን ስእሊ፣ ዝተሓተ 600x600px",
+    "education_help": "ካልኣይ ደረጃ ትምህርቲ ዝወድኡ = 12 ዓመት ስሩዕ ትምህርቲ ምውዳእ",
+    "place_of_birth": "ከተማ እንዳይዳሓ ሃገር ተመላእዎ (ኣብነት: ኣዲስ ኣበባ፣ ኢትዮጵያ)"
+  },
+  "footer": {
+    "copyright": "© 2024 ኢቶ-ዲቪ። ፕሮፈሽናል የዲቪ ሎተሪ ምዝገባ አገልግሎት።"
+  }
+}
