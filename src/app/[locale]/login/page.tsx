@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import ModernLoginForm from '@/components/auth/ModernLoginForm';
 
 type LoginPageProps = {
   params: Promise<{ locale: string }>;
@@ -21,7 +22,10 @@ const content = {
     required: 'Required',
     invalid_email: 'Please enter a valid email',
     processing: 'Logging in...',
-    success: 'Login successful!'
+    success: 'Login successful!',
+    or_continue_with: 'Or continue with',
+    google_login: 'Continue with Google',
+    telegram_login: 'Continue with Telegram'
   },
   am: {
     title: 'መለያዎ ወደ ውስጥ ይግቡ',
@@ -36,7 +40,10 @@ const content = {
     required: 'ያስፈልጋል',
     invalid_email: 'ትክክለኛ ኢሜይል ያስገቡ',
     processing: 'እየገባ ነው...',
-    success: 'በተሳካ ሁኔታ ገብተዋል!'
+    success: 'በተሳካ ሁኔታ ገብተዋል!',
+    or_continue_with: 'ወይም ቀጥል በ',
+    google_login: 'በGoogle ቀጥል',
+    telegram_login: 'በTelegram ቀጥል'
   },
   ti: {
     title: 'ናብ መለያኻ ኣቲወ',
@@ -51,7 +58,10 @@ const content = {
     required: 'የድሊ',
     invalid_email: 'ቅኑዕ ኢመይል ኣእቱ',
     processing: 'እትኣቶ...',
-    success: 'ብዓወት ኣቲኻ!'
+    success: 'ብዓወት ኣቲኻ!',
+    or_continue_with: 'ወይ ቀጽል ብ',
+    google_login: 'ብGoogle ቀጽል',
+    telegram_login: 'ብTelegram ቀጽል'
   },
   or: {
     title: 'Gara Herregaa Keessaniitti Seeni',
@@ -62,22 +72,19 @@ const content = {
     forgot_password: 'Jecha icciitii irraanfatte?',
     no_account: 'Herregaan hin qabdu?',
     register: 'Asii galmeeffadhu',
-    back_home: 'Gara Jalqaba Deebiʼi',
+    back_home: 'Gara Jalqaba Deebi\'i',
     required: 'Barbaachisaa',
     invalid_email: 'Imeelii sirrii galchi',
     processing: 'Seenaa jira...',
-    success: 'Milkaaʼinaan seente!'
+    success: 'Milkaa\'inaan seente!',
+    or_continue_with: 'Ykn itti fufi',
+    google_login: 'Google waliin itti fufi',
+    telegram_login: 'Telegram waliin itti fufi'
   }
 };
 
 export default function LoginPage({ params }: LoginPageProps) {
   const [locale, setLocale] = useState<string>('en');
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     params.then(({ locale: resolvedLocale }) => {
@@ -85,134 +92,27 @@ export default function LoginPage({ params }: LoginPageProps) {
     });
   }, [params]);
 
-  const t = content[locale as keyof typeof content] || content.en;
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: { [key: string]: string } = {};
-
-    if (!formData.email) newErrors.email = t.required;
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = t.invalid_email;
-    }
-
-    if (!formData.password) newErrors.password = t.required;
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-
-    setIsSubmitting(true);
-
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      console.log('Login data:', formData);
-      alert(t.success);
-      
-      // In real app, redirect to dashboard
-      // router.push(`/${locale}/dashboard`);
-      
-    } catch (error) {
-      console.error('Login error:', error);
-      alert('Login failed. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <Link href={`/${locale}`} className="text-blue-600 hover:text-blue-700 mb-4 inline-block">
-            ← {t.back_home}
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {t.title}
-          </h1>
-          <p className="text-gray-600">
-            {t.subtitle}
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%239C92AC" fill-opacity="0.05"%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-40"></div>
+      
+      {/* Back to Home Link */}
+      <div className="absolute top-6 left-6">
+        <Link 
+          href={`/${locale}`} 
+          className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200 hover:border-gray-300 transition-all duration-200"
+        >
+          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back to Home
+        </Link>
+      </div>
 
-        {/* Login Form */}
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                {t.email} <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 min-h-[44px]"
-                placeholder="your@email.com"
-              />
-              {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
-            </div>
-
-            {/* Password */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                {t.password} <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 min-h-[44px]"
-              />
-              {errors.password && <p className="text-red-600 text-sm mt-1">{errors.password}</p>}
-            </div>
-
-            {/* Forgot Password */}
-            <div className="text-right">
-              <Link href={`/${locale}/forgot-password`} className="text-sm text-blue-600 hover:text-blue-700">
-                {t.forgot_password}
-              </Link>
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-md font-medium transition-colors text-lg min-h-[44px]"
-            >
-              {isSubmitting ? t.processing : t.login}
-            </button>
-
-            {/* Register Link */}
-            <div className="text-center pt-4 border-t border-gray-200">
-              <p className="text-gray-600">
-                {t.no_account}{' '}
-                <Link href={`/${locale}/register`} className="text-blue-600 hover:text-blue-700 font-medium">
-                  {t.register}
-                </Link>
-              </p>
-            </div>
-          </form>
-        </div>
+      {/* Main Content */}
+      <div className="relative w-full max-w-md">
+        <ModernLoginForm locale={locale} />
       </div>
     </div>
   );
