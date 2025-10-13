@@ -56,6 +56,31 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
         <p className="text-sm text-gray-600">
           Please review all information carefully before submitting your DV lottery application.
         </p>
+        
+        {/* Application Summary */}
+        <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h4 className="font-medium text-blue-900 mb-2">Application Summary</h4>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <span className="font-medium text-blue-800">Primary Applicant:</span>
+              <p className="text-blue-700">1 person</p>
+            </div>
+            <div>
+              <span className="font-medium text-blue-800">Family Members:</span>
+              <p className="text-blue-700">{familyMembers.length} person{familyMembers.length !== 1 ? 's' : ''}</p>
+            </div>
+            <div>
+              <span className="font-medium text-blue-800">Total Photos:</span>
+              <p className="text-blue-700">
+                {[data.background_info.photo, ...familyMembers.map(m => m.photo)].filter(Boolean).length} uploaded
+              </p>
+            </div>
+            <div>
+              <span className="font-medium text-blue-800">Marital Status:</span>
+              <p className="text-blue-700">{data.background_info.marital_status}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Personal Information */}
@@ -104,6 +129,33 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
               <p className="text-gray-700">{data.personal_info.country_of_eligibility}</p>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Primary Applicant Photo */}
+      <div className="bg-gray-50 rounded-lg p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h4 className="text-md font-medium text-gray-900">
+            Primary Applicant Photo
+          </h4>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => goToStep(4)}
+          >
+            Edit
+          </Button>
+        </div>
+        
+        <div className="text-sm">
+          <span className="font-medium">Photo Status:</span>
+          <p className="text-gray-700">
+            {data.background_info.photo ? 
+              `✓ ${typeof data.background_info.photo === 'object' && 'name' in data.background_info.photo 
+                ? data.background_info.photo.name 
+                : 'Uploaded'}` 
+              : 'Not uploaded'}
+          </p>
         </div>
       </div>
 
@@ -176,12 +228,6 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
             <span className="font-medium">Marital Status:</span>
             <p className="text-gray-700">{data.background_info.marital_status}</p>
           </div>
-          <div>
-            <span className="font-medium">Photo:</span>
-            <p className="text-gray-700">
-              {data.background_info.photo ? `✓ ${data.background_info.photo.name}` : 'Not uploaded'}
-            </p>
-          </div>
         </div>
       </div>
 
@@ -194,7 +240,7 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => goToStep(4)}
+            onClick={() => goToStep(5)}
           >
             Edit
           </Button>
@@ -207,7 +253,15 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
               <p><span className="font-medium">Name:</span> {spouse.first_name} {spouse.middle_name} {spouse.last_name}</p>
               <p><span className="font-medium">Date of Birth:</span> {spouse.date_of_birth ? formatDate(new Date(spouse.date_of_birth)) : ''}</p>
               <p><span className="font-medium">Place of Birth:</span> {spouse.place_of_birth}</p>
-              <p><span className="font-medium">Photo:</span> {spouse.photo ? `✓ ${spouse.photo.name}` : 'Not uploaded'}</p>
+              <p><span className="font-medium">Gender:</span> {spouse.gender}</p>
+              <p><span className="font-medium">Country of Birth:</span> {spouse.country_of_birth}</p>
+              {spouse.passport_number && (
+                <p><span className="font-medium">Passport Number:</span> {spouse.passport_number}</p>
+              )}
+              {spouse.passport_expiry && (
+                <p><span className="font-medium">Passport Expiry:</span> {formatDate(new Date(spouse.passport_expiry))}</p>
+              )}
+              <p><span className="font-medium">Photo:</span> {spouse.photo ? `✓ ${spouse.photo.name || 'Uploaded'}` : 'Not uploaded'}</p>
             </div>
           </div>
         )}
@@ -223,7 +277,15 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
                     <p><span className="font-medium">Name:</span> {child.first_name} {child.middle_name} {child.last_name}</p>
                     <p><span className="font-medium">Date of Birth:</span> {child.date_of_birth ? formatDate(new Date(child.date_of_birth)) : ''}</p>
                     <p><span className="font-medium">Place of Birth:</span> {child.place_of_birth}</p>
-                    <p><span className="font-medium">Photo:</span> {child.photo ? `✓ ${child.photo.name}` : 'Not uploaded'}</p>
+                    <p><span className="font-medium">Gender:</span> {child.gender}</p>
+                    <p><span className="font-medium">Country of Birth:</span> {child.country_of_birth}</p>
+                    {child.passport_number && (
+                      <p><span className="font-medium">Passport Number:</span> {child.passport_number}</p>
+                    )}
+                    {child.passport_expiry && (
+                      <p><span className="font-medium">Passport Expiry:</span> {formatDate(new Date(child.passport_expiry))}</p>
+                    )}
+                    <p><span className="font-medium">Photo:</span> {child.photo ? `✓ ${child.photo.name || 'Uploaded'}` : 'Not uploaded'}</p>
                   </div>
                 </div>
               ))}

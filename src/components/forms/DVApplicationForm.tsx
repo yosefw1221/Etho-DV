@@ -7,15 +7,16 @@ import ProgressBar from '@/components/ui/ProgressBar';
 import PersonalInfoStep from './PersonalInfoStep';
 import ContactInfoStep from './ContactInfoStep';
 import BackgroundInfoStep from './BackgroundInfoStep';
+import PhotoUploadStep from './PhotoUploadStep';
 import FamilyInfoStep from './FamilyInfoStep';
 import ReviewStep from './ReviewStep';
 import { DVFormData, FormStep, ValidationError } from '@/types/form';
-import { 
-  validatePersonalInfo, 
-  validateContactInfo, 
-  validateBackgroundInfo, 
+import {
+  validatePersonalInfo,
+  validateContactInfo,
+  validateBackgroundInfo,
   validateFamilyInfo,
-  validateCompleteForm 
+  validateCompleteForm
 } from '@/lib/validation';
 
 interface DVApplicationFormProps {
@@ -53,6 +54,7 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
       marital_status: '',
     },
     family_members: [],
+    number_of_children: 0,
     current_step: 1,
     is_complete: false,
     ...initialData
@@ -98,7 +100,7 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
 
   const validateCurrentStep = (): boolean => {
     let validation;
-    
+
     switch (formData.current_step) {
       case 1:
         validation = validatePersonalInfo(formData);
@@ -110,9 +112,28 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
         validation = validateBackgroundInfo(formData);
         break;
       case 4:
+        // Photo validation - check if photo exists
+        const photo = formData.background_info.photo;
+        if (!photo) {
+          setErrors({ photo: 'Photo is required' });
+          return false;
+        }
+        // If photo is PhotoData type, check for url
+        if (typeof photo === 'object' && 'url' in photo && !photo.url) {
+          setErrors({ photo: 'Photo is required' });
+          return false;
+        }
+        // If photo is File type, check if it's a valid file
+        if (photo instanceof File && photo.size === 0) {
+          setErrors({ photo: 'Photo is required' });
+          return false;
+        }
+        setErrors({});
+        return true;
+      case 5:
         validation = validateFamilyInfo(formData);
         break;
-      case 5:
+      case 6:
         validation = validateCompleteForm(formData);
         break;
       default:
@@ -129,7 +150,7 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
   };
 
   const nextStep = () => {
-    if (validateCurrentStep() && formData.current_step < 5) {
+    if (validateCurrentStep() && formData.current_step < 6) {
       updateFormData({ current_step: formData.current_step + 1 });
     }
   };
@@ -179,10 +200,11 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
             place_of_birth: member.place_of_birth,
             gender: member.gender,
             country_of_birth: member.country_of_birth,
-            passport_number: member.passport_number,
-            passport_expiry: member.passport_expiry
+            passport_number: member.passport_number || '',
+            passport_expiry: member.passport_expiry || ''
           })),
-          photos: formData.photos || []
+          // Primary photo from background_info.photo
+          primary_photo: formData.background_info.photo
         })
       });
 
@@ -214,8 +236,9 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
       1: t('form.personal_info'),
       2: t('form.contact_info'),
       3: 'Background Information',
-      4: t('form.family_info'),
-      5: t('form.review')
+      4: t('form.upload_photo') || 'Upload Photo',
+      5: t('form.family_info'),
+      6: t('form.review')
     };
     return titles[step as keyof typeof titles] || '';
   };
@@ -235,8 +258,10 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
       case 3:
         return <BackgroundInfoStep {...commonProps} />;
       case 4:
-        return <FamilyInfoStep {...commonProps} />;
+        return <PhotoUploadStep {...commonProps} />;
       case 5:
+        return <FamilyInfoStep {...commonProps} />;
+      case 6:
         return <ReviewStep {...commonProps} onSubmit={handleSubmit} isSubmitting={isSubmitting} />;
       default:
         return null;
@@ -247,9 +272,9 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
     <div className="max-w-4xl mx-auto p-6">
       {/* Progress Bar */}
       <div className="mb-8">
-        <ProgressBar 
-          current={formData.current_step} 
-          total={5} 
+        <ProgressBar
+          current={formData.current_step}
+          total={6}
           className="mb-4"
         />
         <h2 className="text-2xl font-bold text-gray-900 text-center">
@@ -266,8 +291,8 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
       <div className="flex justify-between items-center">
         <div>
           {formData.current_step > 1 && (
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={prevStep}
               disabled={isSubmitting}
             >
@@ -282,7 +307,7 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
             Draft saved automatically
           </span>
 
-          {formData.current_step < 5 ? (
+          {formData.current_step < 6 ? (
             <Button onClick={nextStep} disabled={isSubmitting}>
               {t('form.next')}
             </Button>
