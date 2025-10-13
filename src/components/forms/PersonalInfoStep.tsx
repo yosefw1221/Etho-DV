@@ -6,7 +6,7 @@ import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Modal from '@/components/ui/Modal';
 import { DVFormData, COUNTRIES } from '@/types/form';
-import { validatePersonalInfo } from '@/lib/validation';
+import { validatePersonalInfo, validateField } from '@/lib/validation';
 
 interface PersonalInfoStepProps {
   data: DVFormData;
@@ -29,6 +29,15 @@ const PersonalInfoStep: React.FC<PersonalInfoStepProps> = ({
         [field]: value
       }
     });
+  };
+
+  const handleFieldBlur = (field: string, value: string) => {
+    // Real-time validation on field blur
+    const validationError = validateField(field, value);
+    if (validationError) {
+      // You could show a toast or inline error here
+      console.log(`Validation error for ${field}:`, validationError.message);
+    }
   };
 
   const getHelpContent = (field: string) => {
