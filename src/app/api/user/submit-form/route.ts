@@ -17,7 +17,7 @@ const formSubmissionSchema = z.object({
     place_of_birth: z.string().min(1, 'Place of birth is required'),
     gender: z.enum(['Male', 'Female']),
     country_of_birth: z.string().min(1, 'Country of birth is required'),
-    address: z.string().min(1, 'Address is required'),
+    address: z.string().optional(),
     phone: z.string().min(1, 'Phone number is required'),
     email: z.string().email('Invalid email format'),
     passport_number: z.string().min(1, 'Passport number is required'),

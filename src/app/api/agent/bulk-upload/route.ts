@@ -19,7 +19,7 @@ const csvRowSchema = z.object({
     errorMap: () => ({ message: 'Gender must be Male or Female' }),
   }),
   country_of_birth: z.string().min(1, 'Country of birth is required'),
-  address: z.string().min(1, 'Address is required'),
+  address: z.string().optional(),
   phone: z.string().min(8, 'Phone number is required'),
   email: z.string().email('Invalid email format'),
   passport_number: z.string().min(1, 'Passport number is required'),

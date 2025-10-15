@@ -168,19 +168,19 @@ export function validateContactInfo(data: DVFormData): FormValidation {
   const errors: ValidationError[] = [];
   const { contact_info } = data;
 
-  // Address validation
-  if (!contact_info.address?.trim()) {
-    errors.push({ field: 'address', message: 'Address is required' });
-  } else if (contact_info.address.trim().length < 10) {
-    errors.push({
-      field: 'address',
-      message: 'Address must be at least 10 characters long',
-    });
-  } else if (contact_info.address.trim().length > 200) {
-    errors.push({
-      field: 'address',
-      message: 'Address cannot exceed 200 characters',
-    });
+  // Address validation (optional)
+  if (contact_info.address?.trim()) {
+    if (contact_info.address.trim().length < 10) {
+      errors.push({
+        field: 'address',
+        message: 'Address must be at least 10 characters long',
+      });
+    } else if (contact_info.address.trim().length > 200) {
+      errors.push({
+        field: 'address',
+        message: 'Address cannot exceed 200 characters',
+      });
+    }
   }
 
   // Phone validation
@@ -961,16 +961,14 @@ export function validateField(
       break;
 
     case 'address':
-      if (!trimmedValue) {
-        return { field: fieldName, message: 'Address is required' };
-      }
-      if (trimmedValue.length < 10) {
+      // Address is optional, only validate if provided
+      if (trimmedValue && trimmedValue.length < 10) {
         return {
           field: fieldName,
           message: 'Address must be at least 10 characters long',
         };
       }
-      if (trimmedValue.length > 200) {
+      if (trimmedValue && trimmedValue.length > 200) {
         return {
           field: fieldName,
           message: 'Address cannot exceed 200 characters',
