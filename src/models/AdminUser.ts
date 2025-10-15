@@ -24,11 +24,11 @@ const AdminUserSchema: Schema = new Schema({
       'Please enter a valid email',
     ],
   },
-  password: {
-    type: String,
-    required: [true, 'Password is required'],
-    minlength: [8, 'Password must be at least 8 characters'],
-  },
+    password: {
+      type: String,
+      required: [true, 'Password is required'],
+      minlength: [4, 'Password must be at least 4 characters'],
+    },
   name: {
     type: String,
     required: [true, 'Name is required'],

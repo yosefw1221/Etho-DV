@@ -62,8 +62,8 @@ const ModernRegisterForm: React.FC<ModernRegisterFormProps> = ({ locale }) => {
     }
 
     // Password validation
-    if (formData.password && formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters long';
+    if (formData.password && formData.password.length < 4) {
+      newErrors.password = 'Password must be at least 4 characters long';
     }
 
     // Phone validation (if provided)

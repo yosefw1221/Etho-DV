@@ -7,7 +7,7 @@ import { z } from 'zod';
 const registerSchema = z.object({
   email: z.string().optional(),
   phone: z.string().optional(),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z.string().min(4, 'Password must be at least 4 characters'),
   name: z.string().min(1, 'Name is required'),
   role: z.enum(['user', 'agent']).default('user'),
   language_preference: z.enum(['en', 'am', 'ti', 'or']).default('en'),

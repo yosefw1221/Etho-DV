@@ -63,8 +63,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ locale }) => {
     // Password validation
     if (!formData.password.trim()) {
       newErrors.password = t('auth.required_field');
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters long';
+    } else if (formData.password.length < 4) {
+      newErrors.password = 'Password must be at least 4 characters long';
     }
 
     // Name validation
@@ -262,7 +262,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ locale }) => {
           onChange={(e) => handleInputChange('password', e.target.value)}
           error={errors.password}
           required
-          placeholder="Enter your password (min 8 characters)"
+          placeholder="Enter your password (min 4 characters)"
           autoComplete="new-password"
         />
 

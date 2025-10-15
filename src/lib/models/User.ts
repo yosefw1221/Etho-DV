@@ -46,7 +46,7 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
         // Password only required for local auth
         return !this.provider || this.provider === 'local';
       },
-      minlength: [8, 'Password must be at least 8 characters'],
+      minlength: [4, 'Password must be at least 4 characters'],
       select: false, // Don't include password in queries by default
     },
     firstName: {

@@ -101,8 +101,8 @@ const ProfileManagement: React.FC<ProfileManagementProps> = ({ user, onUserUpdat
 
     if (!passwordData.new_password) {
       newErrors.new_password = 'New password is required';
-    } else if (passwordData.new_password.length < 8) {
-      newErrors.new_password = 'Password must be at least 8 characters long';
+    } else if (passwordData.new_password.length < 4) {
+      newErrors.new_password = 'Password must be at least 4 characters long';
     }
 
     if (!passwordData.confirm_password) {
