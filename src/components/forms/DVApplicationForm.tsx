@@ -93,20 +93,15 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
   const validateCurrentStep = (): boolean => {
     let validation;
 
-    console.log('Validating step:', formData.current_step, 'Form data:', formData);
-
     switch (formData.current_step) {
       case 1:
         validation = validatePersonalInfo(formData);
-        console.log('Step 1 validation result:', validation);
         break;
       case 2:
         validation = validateContactInfo(formData);
-        console.log('Step 2 validation result:', validation);
         break;
       case 3:
         validation = validateBackgroundInfo(formData);
-        console.log('Step 3 validation result:', validation);
         break;
       case 4:
         // Photo validation - check if photo exists
@@ -164,15 +159,10 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
   };
 
   const nextStep = () => {
-    console.log('Next step clicked, current step:', formData.current_step);
-    
     // Force validation of current step
     const isValid = validateCurrentStep();
     
-    console.log('Validation result:', isValid, 'Errors:', errors);
-    
     if (!isValid) {
-      console.log('Validation failed, preventing navigation');
       // Show alert for better user feedback
       alert('Please fix all validation errors before proceeding to the next step.');
       
@@ -185,8 +175,6 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
       }, 100);
       return; // Prevent navigation
     }
-    
-    console.log('Validation passed, moving to next step');
     
     if (formData.current_step < 6) {
       // Clear errors before moving to next step
@@ -361,33 +349,13 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
           )}
 
           {formData.current_step < 6 ? (
-            <div className="flex space-x-2">
-              <Button 
-                onClick={() => {
-                  console.log('Manual validation test');
-                  const result = validateCurrentStep();
-                  console.log('Manual validation result:', result);
-                }}
-                variant="outline"
-                size="sm"
-              >
-                Test Validation
-              </Button>
-              <Button 
-                onClick={clearErrors}
-                variant="outline"
-                size="sm"
-              >
-                Clear Errors
-              </Button>
-              <Button 
-                onClick={nextStep} 
-                disabled={isSubmitting}
-                className={Object.keys(errors).length > 0 ? 'opacity-75' : ''}
-              >
-                {t('form.next')}
-              </Button>
-            </div>
+            <Button 
+              onClick={nextStep} 
+              disabled={isSubmitting}
+              className={Object.keys(errors).length > 0 ? 'opacity-75' : ''}
+            >
+              {t('form.next')}
+            </Button>
           ) : null}
         </div>
       </div>
