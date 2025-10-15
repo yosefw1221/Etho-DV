@@ -78,17 +78,19 @@ const FamilyInfoStep: React.FC<FamilyInfoStepProps> = ({
     const num = parseInt(value) || 0;
     const clampedNum = Math.max(0, Math.min(10, num)); // Limit to 0-10 children
 
-    updateData({ number_of_children: clampedNum });
-
-    // Get current children
+    // Get current children and spouse members
     const currentChildren = data.family_members.filter(m => m.relationship_type === 'child');
     const spouseMembers = data.family_members.filter(m => m.relationship_type === 'spouse');
+    
+    let updatedFamilyMembers = [...spouseMembers]; // Start with spouse members
 
     if (clampedNum > currentChildren.length) {
-      // Add more children
-      const newChildren: FamilyMember[] = [];
+      // Keep existing children and add new ones
+      updatedFamilyMembers = [...spouseMembers, ...currentChildren];
+      
+      // Add new children
       for (let i = currentChildren.length; i < clampedNum; i++) {
-        newChildren.push({
+        updatedFamilyMembers.push({
           id: generateId(),
           relationship_type: 'child',
           first_name: '',
@@ -102,16 +104,20 @@ const FamilyInfoStep: React.FC<FamilyInfoStepProps> = ({
           passport_expiry: '',
         });
       }
-      updateData({
-        family_members: [...spouseMembers, ...currentChildren, ...newChildren]
-      });
     } else if (clampedNum < currentChildren.length) {
-      // Remove excess children
+      // Keep only the first N children
       const childrenToKeep = currentChildren.slice(0, clampedNum);
-      updateData({
-        family_members: [...spouseMembers, ...childrenToKeep]
-      });
+      updatedFamilyMembers = [...spouseMembers, ...childrenToKeep];
+    } else {
+      // Same number, keep all existing children
+      updatedFamilyMembers = [...spouseMembers, ...currentChildren];
     }
+
+    // Single update call to prevent race conditions
+    updateData({ 
+      number_of_children: clampedNum,
+      family_members: updatedFamilyMembers
+    });
   };
 
   const updateFamilyMember = (id: string, field: string, value: string | File) => {

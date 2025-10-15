@@ -165,7 +165,26 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
   };
 
   const nextStep = () => {
-    if (validateCurrentStep() && formData.current_step < 6) {
+    // Force validation of current step
+    const isValid = validateCurrentStep();
+    
+    if (!isValid) {
+      // Show alert for better user feedback
+      alert('Please fix all validation errors before proceeding to the next step.');
+      
+      // Scroll to first error if validation fails
+      setTimeout(() => {
+        const firstError = document.querySelector('.form-error, [data-error="true"], .text-red-600');
+        if (firstError) {
+          firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+      return; // Prevent navigation
+    }
+    
+    if (formData.current_step < 6) {
+      // Clear errors before moving to next step
+      setErrors({});
       updateFormData({ current_step: formData.current_step + 1 });
     }
   };
@@ -292,9 +311,16 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
           total={6}
           className="mb-4"
         />
-        <h2 className="text-2xl font-bold text-gray-900 text-center">
-          {getStepTitle(formData.current_step)}
-        </h2>
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900">
+            {getStepTitle(formData.current_step)}
+          </h2>
+          {Object.keys(errors).length > 0 && (
+            <p className="text-sm text-red-600 mt-2">
+              Step {formData.current_step} has {Object.keys(errors).length} validation error{Object.keys(errors).length !== 1 ? 's' : ''}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Step Content */}
@@ -317,13 +343,23 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
         </div>
 
         <div className="flex items-center space-x-4">
-          {/* Save Draft indicator */}
-          <span className="text-sm text-gray-500">
-            Draft saved automatically
-          </span>
+          {/* Validation Status */}
+          {Object.keys(errors).length > 0 ? (
+            <span className="text-sm text-red-600 flex items-center">
+              ⚠️ Please fix errors to continue
+            </span>
+          ) : (
+            <span className="text-sm text-gray-500">
+              Draft saved automatically
+            </span>
+          )}
 
           {formData.current_step < 6 ? (
-            <Button onClick={nextStep} disabled={isSubmitting}>
+            <Button 
+              onClick={nextStep} 
+              disabled={isSubmitting}
+              className={Object.keys(errors).length > 0 ? 'opacity-75' : ''}
+            >
               {t('form.next')}
             </Button>
           ) : null}
