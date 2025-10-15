@@ -1,6 +1,4 @@
 import mongoose from 'mongoose';
-import { MongoClient, MongoClientOptions } from 'mongodb';
-import { attachDatabasePool } from '@vercel/functions';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -10,200 +8,108 @@ if (!MONGODB_URI) {
   );
 }
 
-// MongoDB Native Client Configuration
-const mongoClientOptions: MongoClientOptions = {
-  appName: "etho-dv.vercel.integration",
-  maxPoolSize: 10,
-  serverSelectionTimeoutMS: 5000,
-  socketTimeoutMS: 45000,
-  family: 4, // Use IPv4, skip trying IPv6
-};
-
-// Mongoose Configuration
+// Optimized connection options for Next.js
 const mongooseOptions = {
   bufferCommands: false,
   maxPoolSize: 10,
   serverSelectionTimeoutMS: 5000,
   socketTimeoutMS: 45000,
-  family: 4,
+  family: 4, // Use IPv4, skip trying IPv6
+  maxIdleTimeMS: 30000,
+  // Optimize for serverless functions
+  minPoolSize: 0,
+  maxConnecting: 2,
 };
 
-// Global caching interfaces
 interface MongooseCache {
   conn: typeof mongoose | null;
   promise: Promise<typeof mongoose> | null;
 }
 
-interface MongoClientCache {
-  client: MongoClient | null;
-  promise: Promise<MongoClient> | null;
-}
-
-// Extend global namespace
+// Global caching for Next.js development HMR
 declare global {
   var mongoose: MongooseCache | undefined;
-  var mongoClient: MongoClientCache | undefined;
 }
 
-// Initialize caches
-let mongooseCache = global.mongoose;
-let mongoClientCache = global.mongoClient;
+let cached = global.mongoose;
 
-if (!mongooseCache) {
-  mongooseCache = global.mongoose = { conn: null, promise: null };
-}
-
-if (!mongoClientCache) {
-  mongoClientCache = global.mongoClient = { client: null, promise: null };
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
 }
 
 /**
- * Connect using Mongoose (for ODM operations)
+ * Optimized MongoDB connection for Next.js
+ * - Uses connection pooling for performance
+ * - Handles serverless function lifecycle
+ * - Supports development HMR
  */
-export async function connectMongoose(): Promise<typeof mongoose> {
-  if (mongooseCache!.conn) {
-    return mongooseCache!.conn;
+async function connectDB(): Promise<typeof mongoose> {
+  // Return existing connection
+  if (cached!.conn) {
+    return cached!.conn;
   }
 
-  if (!mongooseCache!.promise) {
-    mongooseCache!.promise = mongoose.connect(MONGODB_URI, mongooseOptions).then((mongoose) => {
-      console.log('✅ Mongoose connected to MongoDB');
+  // Create connection promise if it doesn't exist
+  if (!cached!.promise) {
+    cached!.promise = mongoose.connect(MONGODB_URI!, mongooseOptions).then((mongoose) => {
+      console.log('✅ MongoDB connected successfully');
       return mongoose;
     });
   }
 
   try {
-    mongooseCache!.conn = await mongooseCache!.promise;
+    cached!.conn = await cached!.promise;
   } catch (e) {
-    mongooseCache!.promise = null;
-    console.error('❌ Mongoose connection error:', e);
+    // Reset promise on error to allow retry
+    cached!.promise = null;
+    console.error('❌ MongoDB connection error:', e);
     throw e;
   }
 
-  return mongooseCache!.conn;
+  return cached!.conn;
 }
 
 /**
- * Connect using native MongoDB driver (for direct operations)
+ * Check if MongoDB is connected and healthy
  */
-export async function connectMongoClient(): Promise<MongoClient> {
-  if (mongoClientCache!.client) {
-    return mongoClientCache!.client;
-  }
-
-  if (!mongoClientCache!.promise) {
-    if (process.env.NODE_ENV === 'development') {
-      // In development mode, use a global variable for HMR compatibility
-      mongoClientCache!.promise = new MongoClient(MONGODB_URI, mongoClientOptions)
-        .connect()
-        .then((client) => {
-          console.log('✅ MongoDB native client connected (development)');
-          return client;
-        });
-    } else {
-      // In production mode, optimize for Vercel
-      const client = new MongoClient(MONGODB_URI, mongoClientOptions);
-      
-      // Attach the client to ensure proper cleanup on function suspension
-      attachDatabasePool(client);
-      
-      mongoClientCache!.promise = client.connect().then((connectedClient) => {
-        console.log('✅ MongoDB native client connected (production)');
-        return connectedClient;
-      });
-    }
-  }
-
-  try {
-    mongoClientCache!.client = await mongoClientCache!.promise;
-  } catch (e) {
-    mongoClientCache!.promise = null;
-    console.error('❌ MongoDB native client connection error:', e);
-    throw e;
-  }
-
-  return mongoClientCache!.client;
+export function isConnected(): boolean {
+  return mongoose.connection.readyState === 1;
 }
 
 /**
- * Get database instance from native MongoDB client
+ * Get current connection state
  */
-export async function getDatabase(dbName?: string) {
-  const client = await connectMongoClient();
-  return client.db(dbName);
+export function getConnectionState() {
+  const states = {
+    0: 'disconnected',
+    1: 'connected',
+    2: 'connecting',
+    3: 'disconnecting',
+  };
+  
+  return {
+    state: states[mongoose.connection.readyState as keyof typeof states] || 'unknown',
+    readyState: mongoose.connection.readyState,
+    host: mongoose.connection.host,
+    name: mongoose.connection.name,
+  };
 }
 
 /**
- * Unified connection function that ensures both Mongoose and native client are connected
+ * Graceful disconnect (useful for testing)
  */
-export async function connectDB() {
-  try {
-    // Connect Mongoose first (most operations use this)
-    await connectMongoose();
-    
-    // Also ensure native client is available for direct operations
-    await connectMongoClient();
-    
-    console.log('🚀 Database connections initialized successfully');
-    return true;
-  } catch (error) {
-    console.error('❌ Failed to initialize database connections:', error);
-    throw error;
+export async function disconnectDB(): Promise<void> {
+  if (cached?.conn) {
+    await mongoose.disconnect();
+    cached.conn = null;
+    cached.promise = null;
+    console.log('✅ MongoDB disconnected');
   }
 }
 
-/**
- * Graceful shutdown for both connections
- */
-export async function disconnectDB() {
-  try {
-    if (mongooseCache?.conn) {
-      await mongoose.disconnect();
-      mongooseCache.conn = null;
-      mongooseCache.promise = null;
-      console.log('✅ Mongoose disconnected');
-    }
-
-    if (mongoClientCache?.client) {
-      await mongoClientCache.client.close();
-      mongoClientCache.client = null;
-      mongoClientCache.promise = null;
-      console.log('✅ MongoDB native client disconnected');
-    }
-  } catch (error) {
-    console.error('❌ Error during database disconnection:', error);
-    throw error;
-  }
-}
-
-/**
- * Health check for database connections
- */
-export async function checkDBHealth() {
-  try {
-    const mongooseHealthy = mongoose.connection.readyState === 1;
-    const client = await connectMongoClient();
-    const nativeHealthy = client.topology?.isConnected() ?? false;
-    
-    return {
-      mongoose: mongooseHealthy,
-      native: nativeHealthy,
-      overall: mongooseHealthy && nativeHealthy
-    };
-  } catch (error) {
-    console.error('❌ Database health check failed:', error);
-    return {
-      mongoose: false,
-      native: false,
-      overall: false
-    };
-  }
-}
-
-// Auto-initialize in production, manual in development
+// Auto-connect in production for better cold start performance
 if (process.env.NODE_ENV === 'production') {
   connectDB().catch(console.error);
 }
 
-// Default export for backward compatibility
 export default connectDB;
