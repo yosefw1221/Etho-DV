@@ -166,6 +166,11 @@ const content = {
     validation_email: 'Please enter a valid email address',
     validation_phone: 'Please enter a valid phone number',
     validation_date: 'Please enter a valid date',
+    validation_age: 'You must be at least 18 years old to apply',
+    age_display: 'Age: {age} years old',
+    age_requirement: 'Must be at least 18 years old',
+    age_valid: 'Age requirement met',
+    age_invalid: 'Age requirement not met',
     
     // Countries (sample - you'd include full list)
     ethiopia: 'Ethiopia',
@@ -271,6 +276,11 @@ const content = {
     validation_email: 'እባክዎ ትክክለኛ ኢሜል አድራሻ ያስገቡ',
     validation_phone: 'እባክዎ ትክክለኛ ስልክ ቁጥር ያስገቡ',
     validation_date: 'እባክዎ ትክክለኛ ቀን ያስገቡ',
+    validation_age: 'ለዲቪ ሎተሪ ለማመልከት ቢያንስ 18 ዓመት መሆን አለብዎት',
+    age_display: 'እድሜ: {age} ዓመት',
+    age_requirement: 'ቢያንስ 18 ዓመት መሆን አለበት',
+    age_valid: 'የእድሜ መስፈርት ተሟልቷል',
+    age_invalid: 'የእድሜ መስፈርት አልተሟላም',
 
     // Countries
     ethiopia: 'ኢትዮጵያ',
@@ -376,6 +386,11 @@ const content = {
     validation_email: 'በጃኹም ሓቀኛ ኣድራሻ ኢሜይል ኣእትዉ',
     validation_phone: 'በጃኹም ሓቀኛ ቁጽሪ ተሌፎን ኣእትዉ',
     validation_date: 'በጃኹም ሓቀኛ ዕለት ኣእትዉ',
+    validation_age: 'ንዲቪ ሎተሪ ንምዝገባ ቢያንስ 18 ዓመት ክትኾኑ ኣለኩም',
+    age_display: 'ዕድመ: {age} ዓመት',
+    age_requirement: 'ቢያንስ 18 ዓመት ክትኾኑ ኣለኩም',
+    age_valid: 'ናይ ዕድመ መስፈርት ተማሊኡ',
+    age_invalid: 'ናይ ዕድመ መስፈርት ኣይተማልአን',
 
     // Countries
     ethiopia: 'ኢትዮጵያ',
@@ -481,6 +496,11 @@ const content = {
     validation_email: 'Maaloo teessoo iimeelii sirrii ta\'e galchaa',
     validation_phone: 'Maaloo lakkoofsa bilbilaa sirrii ta\'e galchaa',
     validation_date: 'Maaloo guyyaa sirrii ta\'e galchaa',
+    validation_age: 'DV Lottery iyyannoof yoo xiqqaate waggaa 18 ta\'uu qabdu',
+    age_display: 'Umurii: waggaa {age}',
+    age_requirement: 'Yoo xiqqaate waggaa 18 ta\'uu qaba',
+    age_valid: 'Ulaagaan umurii guutameera',
+    age_invalid: 'Ulaagaan umurii hin guutamne',
 
     // Countries
     ethiopia: 'Itoophiyaa',
@@ -582,6 +602,24 @@ export default function ApplyPage({ params }: ApplyPageProps) {
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
   const [isAutoSaving, setIsAutoSaving] = useState(false);
 
+  // Calculate age from birth date
+  const calculateAge = (birthDate: string): number => {
+    if (!birthDate) return 0;
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
+
+  // Get calculated age for display
+  const currentAge = calculateAge(formData.personalInfo.birthDate);
+
   useEffect(() => {
     params.then(({ locale: resolvedLocale }) => {
       setLocale(resolvedLocale);
@@ -626,7 +664,14 @@ export default function ApplyPage({ params }: ApplyPageProps) {
         if (!formData.personalInfo.firstName.trim()) errors.firstName = t.validation_required;
         if (!formData.personalInfo.lastName.trim()) errors.lastName = t.validation_required;
         if (!formData.personalInfo.gender) errors.gender = t.validation_required;
-        if (!formData.personalInfo.birthDate) errors.birthDate = t.validation_required;
+        if (!formData.personalInfo.birthDate) {
+          errors.birthDate = t.validation_required;
+        } else {
+          const age = calculateAge(formData.personalInfo.birthDate);
+          if (age < 18) {
+            errors.birthDate = t.validation_age;
+          }
+        }
         if (!formData.personalInfo.birthCity.trim()) errors.birthCity = t.validation_required;
         if (!formData.personalInfo.birthCountry) errors.birthCountry = t.validation_required;
         if (!formData.personalInfo.countryOfEligibility) errors.countryOfEligibility = t.validation_required;
@@ -905,6 +950,9 @@ export default function ApplyPage({ params }: ApplyPageProps) {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             {t.birth_date} <span className="text-red-500">*</span>
           </label>
+          <p className="text-xs text-gray-600 mb-2">
+            {t.age_requirement}
+          </p>
           <input
             type="date"
             value={formData.personalInfo.birthDate}
@@ -912,8 +960,19 @@ export default function ApplyPage({ params }: ApplyPageProps) {
             className={`w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
               validationErrors.birthDate ? 'border-red-500' : 'border-gray-300'
             }`}
+            max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
             required
           />
+          {formData.personalInfo.birthDate && (
+            <div className="mt-1">
+              <p className={`text-sm ${
+                currentAge >= 18 ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {currentAge >= 18 ? '✓' : '✗'} {t.age_display.replace('{age}', currentAge.toString())}
+                {currentAge < 18 && ` (${t.age_requirement})`}
+              </p>
+            </div>
+          )}
           {validationErrors.birthDate && (
             <p className="mt-1 text-sm text-red-600">{validationErrors.birthDate}</p>
           )}
