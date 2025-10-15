@@ -9,7 +9,7 @@ export interface IFamilyMember {
   place_of_birth: string;
   gender: 'Male' | 'Female';
   country_of_birth: string;
-  passport_number?: string;
+// passport_number?: string;
   passport_expiry?: Date;
   photo_url?: string;
 }
@@ -31,7 +31,7 @@ export interface IApplicantData {
   email: string;
   
   // Documentation
-  passport_number: string;
+// passport_number: string;
   passport_expiry: Date;
   
   // Background
@@ -100,10 +100,10 @@ const FamilyMemberSchema = new Schema({
     required: true,
     trim: true
   },
-  passport_number: {
-    type: String,
-    trim: true
-  },
+  // passport_number: {
+  //   type: String,
+  //   trim: true
+  // },
   passport_expiry: {
     type: Date
   },
@@ -171,11 +171,11 @@ const ApplicantDataSchema = new Schema({
   },
   
   // Documentation
-  passport_number: {
-    type: String,
-    required: true,
-    trim: true
-  },
+  // passport_number: {
+  //   type: String,
+  //   required: true,
+  //   trim: true
+  // },
   passport_expiry: {
     type: Date,
     required: true
