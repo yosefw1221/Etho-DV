@@ -82,20 +82,12 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
 
   const updateFormData = (updates: Partial<DVFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
-    // Clear related errors when data changes
-    if (updates.personal_info || updates.contact_info || updates.background_info || updates.family_members) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        Object.keys(updates).forEach(key => {
-          Object.keys(newErrors).forEach(errorKey => {
-            if (errorKey.startsWith(key) || errorKey.includes(key)) {
-              delete newErrors[errorKey];
-            }
-          });
-        });
-        return newErrors;
-      });
-    }
+    // Note: Removed automatic error clearing to prevent interference with validation
+    // Errors will be cleared manually when validation passes or when moving to next step
+  };
+
+  const clearErrors = () => {
+    setErrors({});
   };
 
   const validateCurrentStep = (): boolean => {
@@ -198,7 +190,7 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
     
     if (formData.current_step < 6) {
       // Clear errors before moving to next step
-      setErrors({});
+      clearErrors();
       updateFormData({ current_step: formData.current_step + 1 });
     }
   };
@@ -380,6 +372,13 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
                 size="sm"
               >
                 Test Validation
+              </Button>
+              <Button 
+                onClick={clearErrors}
+                variant="outline"
+                size="sm"
+              >
+                Clear Errors
               </Button>
               <Button 
                 onClick={nextStep} 
