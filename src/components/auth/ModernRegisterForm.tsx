@@ -132,11 +132,19 @@ const ModernRegisterForm: React.FC<ModernRegisterFormProps> = ({ locale }) => {
         localStorage.setItem('user_data', JSON.stringify(data.user));
       }
 
-      // Redirect to dashboard based on user type
-      const dashboardPath = data.user.role === 'agent' 
-        ? `/${locale}/agent` 
-        : `/${locale}/dashboard`;
-      window.location.href = dashboardPath;
+      // Check for redirect parameter in URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectUrl = urlParams.get('redirect');
+      
+      if (redirectUrl) {
+        window.location.href = decodeURIComponent(redirectUrl);
+      } else {
+        // Redirect to dashboard based on user type
+        const dashboardPath = data.user.role === 'agent' 
+          ? `/${locale}/agent` 
+          : `/${locale}/dashboard`;
+        window.location.href = dashboardPath;
+      }
       
     } catch (error) {
       console.error('Registration error:', error);

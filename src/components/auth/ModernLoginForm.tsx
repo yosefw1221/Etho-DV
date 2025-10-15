@@ -65,11 +65,19 @@ const ModernLoginForm: React.FC<ModernLoginFormProps> = ({ locale }) => {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         
-        // Redirect based on user role
-        if (data.user.role === 'agent') {
-          window.location.href = `/${locale}/agent`;
+        // Check for redirect parameter in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectUrl = urlParams.get('redirect');
+        
+        if (redirectUrl) {
+          window.location.href = decodeURIComponent(redirectUrl);
         } else {
-          window.location.href = `/${locale}/dashboard`;
+          // Redirect based on user role
+          if (data.user.role === 'agent') {
+            window.location.href = `/${locale}/agent`;
+          } else {
+            window.location.href = `/${locale}/dashboard`;
+          }
         }
       } else {
         setErrors({ general: data.error || 'Login failed. Please try again.' });
