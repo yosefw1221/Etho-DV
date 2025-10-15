@@ -20,10 +20,10 @@ const formSubmissionSchema = z.object({
     address: z.string().optional(),
     phone: z.string().min(1, 'Phone number is required'),
     email: z.string().email('Invalid email format'),
-    passport_number: z.string().min(1, 'Passport number is required'),
-    passport_expiry: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid passport expiry date'),
+    // passport_number: z.string().min(1, 'Passport number is required'),
+    // passport_expiry: z
+    //   .string()
+    //   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid passport expiry date'),
     education_level: z.string().min(1, 'Education level is required'),
     occupation: z.string().optional(),
     marital_status: z.enum(['Single', 'Married']),
@@ -41,8 +41,8 @@ const formSubmissionSchema = z.object({
         place_of_birth: z.string().min(1, 'Place of birth is required'),
         gender: z.enum(['Male', 'Female']),
         country_of_birth: z.string().min(1, 'Country of birth is required'),
-        passport_number: z.string().optional(),
-        passport_expiry: z.string().optional(),
+        // passport_number: z.string().optional(),
+        // passport_expiry: z.string().optional(),
       })
     )
     .optional(),
@@ -83,15 +83,15 @@ async function submitFormHandler(request: NextRequest) {
       applicant_data: {
         ...validatedData.applicant_data,
         date_of_birth: new Date(validatedData.applicant_data.date_of_birth),
-        passport_expiry: new Date(validatedData.applicant_data.passport_expiry),
+        // passport_expiry: new Date(validatedData.applicant_data.passport_expiry),
       },
       family_members:
         validatedData.family_members?.map((member) => ({
           ...member,
           date_of_birth: new Date(member.date_of_birth),
-          passport_expiry: member.passport_expiry
-            ? new Date(member.passport_expiry)
-            : undefined,
+          // passport_expiry: member.passport_expiry
+          //   ? new Date(member.passport_expiry)
+          //   : undefined,
         })) || [],
       photos: validatedData.photos || [],
       payment_amount: 1, // $1 USD for individual users
@@ -148,13 +148,13 @@ function validateBusinessRules(
   }
 
   // Check passport expiry
-  const passportExpiry = new Date(data.applicant_data.passport_expiry);
-  if (passportExpiry <= new Date()) {
-    errors.push({
-      field: 'applicant_data.passport_expiry',
-      error: 'Passport must not be expired',
-    });
-  }
+  // const passportExpiry = new Date(data.applicant_data.passport_expiry);
+  // if (passportExpiry <= new Date()) {
+  //   errors.push({
+  //     field: 'applicant_data.passport_expiry',
+  //     error: 'Passport must not be expired',
+  //   });
+  // }
 
   // Validate spouse information if married
   if (data.applicant_data.marital_status === 'Married') {
