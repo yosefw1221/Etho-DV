@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ensureDBConnection } from '@/middleware/dbConnection';
-import User from '@/lib/models/User';
+import User from '@/models/User';
 import { hashPassword, generateToken } from '@/lib/auth';
 import { z } from 'zod';
 
 const registerSchema = z.object({
   email: z.string().email('Invalid email format'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
+  name: z.string().min(1, 'Name is required'),
   phone: z.string().min(1, 'Phone number is required'),
   role: z.enum(['user', 'agent']).default('user'),
   language_preference: z.enum(['en', 'am', 'ti', 'or']).default('en'),
   business_name: z.string().optional(),
+  referral_code: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -25,12 +25,12 @@ export async function POST(request: NextRequest) {
     const {
       email,
       password,
-      first_name,
-      last_name,
+      name,
       phone,
       role,
       language_preference,
       business_name,
+      referral_code,
     } = validatedData;
 
     // Check if user already exists
@@ -40,6 +40,19 @@ export async function POST(request: NextRequest) {
         { error: 'User with this email already exists' },
         { status: 400 }
       );
+    }
+
+    // Validate referral code if provided
+    let referrerExists = false;
+    if (referral_code) {
+      const referrer = await User.findOne({ referral_code });
+      if (!referrer) {
+        return NextResponse.json(
+          { error: 'Invalid referral code' },
+          { status: 400 }
+        );
+      }
+      referrerExists = true;
     }
 
     // Validate business name for agents
@@ -57,15 +70,15 @@ export async function POST(request: NextRequest) {
     const userData: any = {
       email,
       password: hashedPassword,
-      firstName: first_name,
-      lastName: last_name,
+      name,
       phone,
       role,
-      languagePreference: language_preference,
+      language_preference,
+      referred_by: referral_code || undefined,
     };
 
     if (role === 'agent') {
-      userData.businessName = business_name;
+      userData.business_name = business_name;
     }
 
     const user = new User(userData);
@@ -78,11 +91,11 @@ export async function POST(request: NextRequest) {
     const userResponse = {
       id: user._id,
       email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
+      name: user.name,
       phone: user.phone,
       role: user.role,
-      languagePreference: user.languagePreference,
+      language_preference: user.language_preference,
+      referral_code: user.referral_code,
     };
 
     return NextResponse.json(

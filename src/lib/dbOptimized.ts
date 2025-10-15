@@ -51,10 +51,12 @@ async function connectDB(): Promise<typeof mongoose> {
 
   // Create connection promise if it doesn't exist
   if (!cached!.promise) {
-    cached!.promise = mongoose.connect(MONGODB_URI!, mongooseOptions).then((mongoose) => {
-      console.log('✅ MongoDB connected successfully');
-      return mongoose;
-    });
+    cached!.promise = mongoose
+      .connect(MONGODB_URI!, mongooseOptions)
+      .then((mongoose) => {
+        console.log('✅ MongoDB connected successfully');
+        return mongoose;
+      });
   }
 
   try {
@@ -86,9 +88,11 @@ export function getConnectionState() {
     2: 'connecting',
     3: 'disconnecting',
   };
-  
+
   return {
-    state: states[mongoose.connection.readyState as keyof typeof states] || 'unknown',
+    state:
+      states[mongoose.connection.readyState as keyof typeof states] ||
+      'unknown',
     readyState: mongoose.connection.readyState,
     host: mongoose.connection.host,
     name: mongoose.connection.name,

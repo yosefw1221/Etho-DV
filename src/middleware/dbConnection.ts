@@ -10,15 +10,15 @@ const CONNECTION_CHECK_INTERVAL = 30000; // 30 seconds
  */
 async function ensureConnection(): Promise<void> {
   const now = Date.now();
-  
+
   // Skip check if recently verified and still connected
   if (now - lastConnectionCheck < CONNECTION_CHECK_INTERVAL && isConnected()) {
     return;
   }
-  
+
   // Update check timestamp
   lastConnectionCheck = now;
-  
+
   // Connect if not connected
   if (!isConnected()) {
     console.log('🔄 Establishing MongoDB connection...');
@@ -39,7 +39,7 @@ export function withDBConnection<T extends any[]>(
       return await handler(...args);
     } catch (error) {
       console.error('Database connection middleware error:', error);
-      
+
       return NextResponse.json(
         {
           error: 'Database connection failed',

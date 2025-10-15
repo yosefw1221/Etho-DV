@@ -47,11 +47,16 @@ export interface IForm extends Document {
   family_members: IFamilyMember[];
   photos: string[];
   payment_status: 'pending' | 'paid' | 'failed';
-  processing_status: 'draft' | 'submitted' | 'processing' | 'completed' | 'failed';
+  processing_status: 'draft' | 'submitted' | 'processing' | 'approved' | 'declined' | 'completed' | 'failed';
   confirmation_document_url?: string;
+  completion_document_url?: string;
+  bank_receipt_url?: string;
+  bank_receipt_verified?: boolean;
   payment_amount: number;
   payment_currency: string;
   transaction_id?: string;
+  tracking_id: string;
+  admin_notes?: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -214,11 +219,21 @@ const FormSchema: Schema = new Schema({
   },
   processing_status: {
     type: String,
-    enum: ['draft', 'submitted', 'processing', 'completed', 'failed'],
+    enum: ['draft', 'submitted', 'processing', 'approved', 'declined', 'completed', 'failed'],
     default: 'draft'
   },
   confirmation_document_url: {
     type: String
+  },
+  completion_document_url: {
+    type: String
+  },
+  bank_receipt_url: {
+    type: String
+  },
+  bank_receipt_verified: {
+    type: Boolean,
+    default: false
   },
   payment_amount: {
     type: Number,
@@ -231,14 +246,36 @@ const FormSchema: Schema = new Schema({
   },
   transaction_id: {
     type: String
+  },
+  tracking_id: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  admin_notes: {
+    type: String
   }
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
+});
+
+// Generate tracking ID
+function generateTrackingId(): string {
+  return 'TRK-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
+// Pre-save hook to generate tracking ID
+FormSchema.pre('save', function (next) {
+  if (this.isNew && !this.tracking_id) {
+    this.tracking_id = generateTrackingId();
+  }
+  next();
 });
 
 // Index for faster queries
 FormSchema.index({ user_id: 1, created_at: -1 });
 FormSchema.index({ payment_status: 1 });
 FormSchema.index({ processing_status: 1 });
+FormSchema.index({ tracking_id: 1 });
 
 export default mongoose.models.Form || mongoose.model<IForm>('Form', FormSchema);

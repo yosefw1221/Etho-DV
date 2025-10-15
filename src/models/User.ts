@@ -3,16 +3,23 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IUser extends Document {
   email: string;
   password: string;
-  first_name: string;
-  last_name: string;
+  name: string;
   phone: string;
   role: 'user' | 'agent' | 'admin' | 'operator';
   language_preference: 'en' | 'am' | 'ti' | 'or';
+  
+  // Referral system fields
+  referral_code: string;
+  referred_by?: string;
+  referral_earnings: number;
+  total_referrals: number;
+  
   // Agent-specific fields
   business_name?: string;
   total_submissions?: number;
   current_tier?: 'bronze' | 'silver' | 'gold';
   discount_rate?: number;
+  
   created_at: Date;
   updated_at: Date;
 }
@@ -35,14 +42,9 @@ const UserSchema: Schema = new Schema(
       required: [true, 'Password is required'],
       minlength: [8, 'Password must be at least 8 characters'],
     },
-    first_name: {
+    name: {
       type: String,
-      required: [true, 'First name is required'],
-      trim: true,
-    },
-    last_name: {
-      type: String,
-      required: [true, 'Last name is required'],
+      required: [true, 'Name is required'],
       trim: true,
     },
     phone: {
@@ -60,6 +62,28 @@ const UserSchema: Schema = new Schema(
       enum: ['en', 'am', 'ti', 'or'],
       default: 'en',
     },
+    
+    // Referral system fields
+    referral_code: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+    referred_by: {
+      type: String,
+      trim: true,
+    },
+    referral_earnings: {
+      type: Number,
+      default: 0,
+      max: 10000, // 10K ETB limit
+    },
+    total_referrals: {
+      type: Number,
+      default: 0,
+    },
+    
     // Agent-specific fields
     business_name: {
       type: String,
@@ -86,8 +110,19 @@ const UserSchema: Schema = new Schema(
   }
 );
 
-// Update tier and discount rate based on total submissions
+// Generate referral code if not exists
+function generateReferralCode(): string {
+  return Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
+// Pre-save hooks
 UserSchema.pre('save', function (next) {
+  // Generate referral code for new users
+  if (this.isNew && !this.referral_code) {
+    this.referral_code = generateReferralCode();
+  }
+  
+  // Update tier and discount rate based on total submissions
   if (this.role === 'agent' && this.isModified('total_submissions')) {
     const submissions = Number(this.total_submissions) || 0;
 
@@ -104,6 +139,10 @@ UserSchema.pre('save', function (next) {
   }
   next();
 });
+
+// Indexes for better performance
+UserSchema.index({ referral_code: 1 });
+UserSchema.index({ referred_by: 1 });
 
 export default mongoose.models.User ||
   mongoose.model<IUser>('User', UserSchema);
