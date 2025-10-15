@@ -579,6 +579,8 @@ export default function ApplyPage({ params }: ApplyPageProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState<FormData>(() => loadSavedFormData());
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
 
   useEffect(() => {
     params.then(({ locale: resolvedLocale }) => {
@@ -586,10 +588,15 @@ export default function ApplyPage({ params }: ApplyPageProps) {
     });
   }, [params]);
 
-  // Save form data to localStorage whenever it changes
+  // Auto-save form data with debounce
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('dv_form_draft', JSON.stringify(formData));
+      setIsAutoSaving(true);
+      const timeoutId = setTimeout(() => {
+        localStorage.setItem('dv_form_draft', JSON.stringify(formData));
+        setIsAutoSaving(false);
+      }, 1000);
+      return () => clearTimeout(timeoutId);
     }
   }, [formData]);
 
@@ -604,32 +611,77 @@ export default function ApplyPage({ params }: ApplyPageProps) {
 
   // Calculate total steps based on form state
   const getTotalSteps = () => {
-    let steps = 3; // Always have: Personal Info, Contact Info, Education
-
-    // Add photo upload step
-    steps += 1;
-
-    // Add marital status step (includes spouse if married)
-    steps += 1;
-
-    // Add children count step
-    steps += 1;
-
-    // Add children details step if there are children
-    if (formData.numberOfChildren > 0) {
-      steps += 1;
-    }
-
-    // Add review step
-    steps += 1;
-
+    let steps = 6; // Personal Info, Contact Info, Education, Photo, Marital Status (includes children), Review
     return steps;
   };
   
   const totalSteps = getTotalSteps();
 
+  // Form validation functions
+  const validateStep = (step: number): boolean => {
+    const errors: {[key: string]: string} = {};
+    
+    switch (step) {
+      case 1: // Personal Info
+        if (!formData.personalInfo.firstName.trim()) errors.firstName = t.validation_required;
+        if (!formData.personalInfo.lastName.trim()) errors.lastName = t.validation_required;
+        if (!formData.personalInfo.gender) errors.gender = t.validation_required;
+        if (!formData.personalInfo.birthDate) errors.birthDate = t.validation_required;
+        if (!formData.personalInfo.birthCity.trim()) errors.birthCity = t.validation_required;
+        if (!formData.personalInfo.birthCountry) errors.birthCountry = t.validation_required;
+        if (!formData.personalInfo.countryOfEligibility) errors.countryOfEligibility = t.validation_required;
+        break;
+        
+      case 2: // Contact Info
+        if (!formData.contactInfo.emailAddress.trim()) {
+          errors.emailAddress = t.validation_required;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactInfo.emailAddress)) {
+          errors.emailAddress = t.validation_email;
+        }
+        if (!formData.contactInfo.countryOfResidence) errors.countryOfResidence = t.validation_required;
+        break;
+        
+      case 3: // Education & Work
+        if (!formData.educationWork.educationLevel) errors.educationLevel = t.validation_required;
+        if ((formData.educationWork.educationLevel === 'primary' || 
+             formData.educationWork.educationLevel === 'high_school_no_degree') && 
+            !formData.educationWork.occupation.trim()) {
+          errors.occupation = t.validation_required;
+        }
+        break;
+        
+      case 4: // Photo
+        if (!formData.personalInfo.photo) errors.photo = t.validation_required;
+        break;
+        
+      case 5: // Family
+        if (!formData.maritalStatus) errors.maritalStatus = t.validation_required;
+        if (formData.maritalStatus === 'married') {
+          if (!formData.spouseInfo.firstName.trim()) errors.spouseFirstName = t.validation_required;
+          if (!formData.spouseInfo.lastName.trim()) errors.spouseLastName = t.validation_required;
+          if (!formData.spouseInfo.gender) errors.spouseGender = t.validation_required;
+          if (!formData.spouseInfo.birthDate) errors.spouseBirthDate = t.validation_required;
+          if (!formData.spouseInfo.birthCity.trim()) errors.spouseBirthCity = t.validation_required;
+          if (!formData.spouseInfo.photo) errors.spousePhoto = t.validation_required;
+        }
+        // Validate children if any
+        formData.children.forEach((child, index) => {
+          if (!child.firstName.trim()) errors[`child${index}FirstName`] = t.validation_required;
+          if (!child.lastName.trim()) errors[`child${index}LastName`] = t.validation_required;
+          if (!child.gender) errors[`child${index}Gender`] = t.validation_required;
+          if (!child.birthDate) errors[`child${index}BirthDate`] = t.validation_required;
+          if (!child.birthCity.trim()) errors[`child${index}BirthCity`] = t.validation_required;
+          if (!child.photo) errors[`child${index}Photo`] = t.validation_required;
+        });
+        break;
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleNext = () => {
-    if (currentStep < totalSteps) {
+    if (validateStep(currentStep) && currentStep < totalSteps) {
       setCurrentStep(prev => prev + 1);
     }
   };
@@ -715,6 +767,18 @@ export default function ApplyPage({ params }: ApplyPageProps) {
     }));
   };
 
+  const getStepTitle = (step: number) => {
+    switch (step) {
+      case 1: return t.step_1;
+      case 2: return t.step_2;
+      case 3: return t.step_3;
+      case 4: return t.upload_photo || 'Photo';
+      case 5: return 'Family';
+      case 6: return t.step_6;
+      default: return '';
+    }
+  };
+
   const renderProgressBar = () => (
     <div className="mb-8">
       <div className="flex items-center justify-between">
@@ -730,14 +794,7 @@ export default function ApplyPage({ params }: ApplyPageProps) {
               {step < currentStep ? <CheckIcon className="w-5 h-5" /> : step}
             </div>
             <span className="text-xs mt-1 text-center max-w-20">
-              {step === 1 && t.step_1}
-              {step === 2 && t.step_2}
-              {step === 3 && t.step_3}
-              {step === 4 && (t.upload_photo || 'Photo')}
-              {step === 5 && t.step_4}
-              {step === 6 && 'Children'}
-              {step === 7 && (formData.numberOfChildren > 0 ? 'Details' : t.step_6)}
-              {step === 8 && t.step_6}
+              {getStepTitle(step)}
             </span>
           </div>
         ))}
@@ -767,9 +824,14 @@ export default function ApplyPage({ params }: ApplyPageProps) {
             type="text"
             value={formData.personalInfo.lastName}
             onChange={(e) => updatePersonalInfo('lastName', e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            className={`w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+              validationErrors.lastName ? 'border-red-500' : 'border-gray-300'
+            }`}
             required
           />
+          {validationErrors.lastName && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.lastName}</p>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -779,9 +841,14 @@ export default function ApplyPage({ params }: ApplyPageProps) {
             type="text"
             value={formData.personalInfo.firstName}
             onChange={(e) => updatePersonalInfo('firstName', e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            className={`w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+              validationErrors.firstName ? 'border-red-500' : 'border-gray-300'
+            }`}
             required
           />
+          {validationErrors.firstName && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.firstName}</p>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -827,6 +894,9 @@ export default function ApplyPage({ params }: ApplyPageProps) {
             {t.female}
           </label>
         </div>
+        {validationErrors.gender && (
+          <p className="mt-1 text-sm text-red-600">{validationErrors.gender}</p>
+        )}
       </div>
 
       {/* Birth Information */}
@@ -839,9 +909,14 @@ export default function ApplyPage({ params }: ApplyPageProps) {
             type="date"
             value={formData.personalInfo.birthDate}
             onChange={(e) => updatePersonalInfo('birthDate', e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            className={`w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+              validationErrors.birthDate ? 'border-red-500' : 'border-gray-300'
+            }`}
             required
           />
+          {validationErrors.birthDate && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.birthDate}</p>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -851,10 +926,15 @@ export default function ApplyPage({ params }: ApplyPageProps) {
             type="text"
             value={formData.personalInfo.birthCity}
             onChange={(e) => updatePersonalInfo('birthCity', e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            className={`w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+              validationErrors.birthCity ? 'border-red-500' : 'border-gray-300'
+            }`}
             placeholder="Addis Ababa"
             required
           />
+          {validationErrors.birthCity && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.birthCity}</p>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1002,9 +1082,14 @@ export default function ApplyPage({ params }: ApplyPageProps) {
             type="email"
             value={formData.contactInfo.emailAddress}
             onChange={(e) => updateContactInfo('emailAddress', e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            className={`w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+              validationErrors.emailAddress ? 'border-red-500' : 'border-gray-300'
+            }`}
             required
           />
+          {validationErrors.emailAddress && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.emailAddress}</p>
+          )}
         </div>
       </div>
     </div>
@@ -1038,6 +1123,9 @@ export default function ApplyPage({ params }: ApplyPageProps) {
           <option value="graduate_degree">{t.education_graduate_degree}</option>
           <option value="doctorate">{t.education_doctorate}</option>
         </select>
+        {validationErrors.educationLevel && (
+          <p className="mt-1 text-sm text-red-600">{validationErrors.educationLevel}</p>
+        )}
       </div>
 
       {/* Work Experience (conditional) */}
@@ -1126,6 +1214,9 @@ export default function ApplyPage({ params }: ApplyPageProps) {
             alert('Photo upload failed: ' + error);
           }}
         />
+        {validationErrors.photo && (
+          <p className="mt-2 text-sm text-red-600">{validationErrors.photo}</p>
+        )}
       </div>
 
       <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
@@ -1141,10 +1232,10 @@ export default function ApplyPage({ params }: ApplyPageProps) {
     </div>
   );
 
-  const renderMaritalStatusStep = () => (
+  const renderFamilyStep = () => (
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold text-gray-900 mb-6">
-        {t.marital_status_title}
+        Family Information
       </h2>
 
       {/* Marital Status */}
@@ -1298,6 +1389,9 @@ export default function ApplyPage({ params }: ApplyPageProps) {
                 alert('Spouse photo upload failed: ' + error);
               }}
             />
+            {validationErrors.spousePhoto && (
+              <p className="mt-2 text-sm text-red-600">{validationErrors.spousePhoto}</p>
+            )}
           </div>
         </div>
       )}
@@ -1339,189 +1433,149 @@ export default function ApplyPage({ params }: ApplyPageProps) {
           ))}
         </select>
       </div>
-    </div>
-  );
 
-  const renderChildrenCountStep = () => (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-semibold text-gray-900 mb-6">
-        Children Information
-      </h2>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-4">
-          How many children will accompany you to the United States? <span className="text-red-500">*</span>
-        </label>
-        <select
-          value={formData.numberOfChildren}
-          onChange={(e) => {
-            const count = parseInt(e.target.value);
-            setFormData(prev => ({
-              ...prev,
-              numberOfChildren: count,
-              children: count > 0 ? Array.from({ length: count }, (_, i) => prev.children[i] || {
-                lastName: '',
-                firstName: '',
-                middleName: '',
-                gender: '',
-                birthDate: '',
-                birthCity: '',
-                birthCountry: 'Ethiopia',
-                photo: null,
-              }) : []
-            }));
-          }}
-          className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-          required
-        >
-          <option value="">Select number of children</option>
-          {Array.from({ length: 11 }, (_, i) => (
-            <option key={i} value={i}>{i}</option>
-          ))}
-        </select>
-        {formData.numberOfChildren > 0 && (
-          <p className="text-sm text-blue-600 mt-2">
-            You will provide details for {formData.numberOfChildren} child{formData.numberOfChildren > 1 ? 'ren' : ''} in the next step.
-          </p>
-        )}
-      </div>
-    </div>
-  );
-
-  const renderChildrenStep = () => (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-semibold text-gray-900 mb-6">
-        {t.children_title}
-      </h2>
-
-      {formData.children.map((child, index) => (
-        <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            {t.child_info.replace('{number}', (index + 1).toString())}
+      {/* Children Information */}
+      {formData.numberOfChildren > 0 && (
+        <div className="space-y-6">
+          <h3 className="text-lg font-medium text-gray-900">
+            {t.children_title}
           </h3>
-          
-          {/* Child Name Fields */}
-          <div className="grid md:grid-cols-3 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t.last_name} <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={child.lastName}
-                onChange={(e) => updateChild(index, 'lastName', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t.first_name} <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={child.firstName}
-                onChange={(e) => updateChild(index, 'firstName', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t.middle_name}
-              </label>
-              <input
-                type="text"
-                value={child.middleName}
-                onChange={(e) => updateChild(index, 'middleName', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-              />
-            </div>
-          </div>
+          {formData.children.map((child, index) => (
+            <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+              <h4 className="text-md font-medium text-gray-900 mb-4">
+                {t.child_info.replace('{number}', (index + 1).toString())}
+              </h4>
+              
+              {/* Child Name Fields */}
+              <div className="grid md:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t.last_name} <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={child.lastName}
+                    onChange={(e) => updateChild(index, 'lastName', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t.first_name} <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={child.firstName}
+                    onChange={(e) => updateChild(index, 'firstName', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t.middle_name}
+                  </label>
+                  <input
+                    type="text"
+                    value={child.middleName}
+                    onChange={(e) => updateChild(index, 'middleName', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  />
+                </div>
+              </div>
 
-          {/* Child Gender and Birth Info */}
-          <div className="grid md:grid-cols-4 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t.gender} <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={child.gender}
-                onChange={(e) => updateChild(index, 'gender', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                required
-              >
-                <option value="">Select</option>
-                <option value="male">{t.male}</option>
-                <option value="female">{t.female}</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t.birth_date} <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                value={child.birthDate}
-                onChange={(e) => updateChild(index, 'birthDate', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t.birth_city} <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={child.birthCity}
-                onChange={(e) => updateChild(index, 'birthCity', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t.birth_country} <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={child.birthCountry}
-                onChange={(e) => updateChild(index, 'birthCountry', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                required
-              >
-                <option value="Ethiopia">Ethiopia</option>
-                {/* Add more countries */}
-              </select>
-            </div>
-          </div>
+              {/* Child Gender and Birth Info */}
+              <div className="grid md:grid-cols-4 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t.gender} <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={child.gender}
+                    onChange={(e) => updateChild(index, 'gender', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    required
+                  >
+                    <option value="">Select</option>
+                    <option value="male">{t.male}</option>
+                    <option value="female">{t.female}</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t.birth_date} <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={child.birthDate}
+                    onChange={(e) => updateChild(index, 'birthDate', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t.birth_city} <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={child.birthCity}
+                    onChange={(e) => updateChild(index, 'birthCity', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t.birth_country} <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={child.birthCountry}
+                    onChange={(e) => updateChild(index, 'birthCountry', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    required
+                  >
+                    <option value="Ethiopia">Ethiopia</option>
+                    {/* Add more countries */}
+                  </select>
+                </div>
+              </div>
 
-          {/* Child Photo */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t.upload_photo} <span className="text-red-500">*</span>
-            </label>
-            <PhotoUploadWithCrop
-              formId={`child-${index}`}
-              personType="child"
-              required
-              currentPhoto={
-                child.photo && typeof child.photo === 'object'
-                  ? child.photo.url
-                  : undefined
-              }
-              onUploadSuccess={(result) => {
-                updateChild(index, 'photo', result);
-              }}
-              onUploadError={(error) => {
-                console.error(`Child ${index + 1} photo upload error:`, error);
-                alert(`Child ${index + 1} photo upload failed: ` + error);
-              }}
-            />
-          </div>
+              {/* Child Photo */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {t.upload_photo} <span className="text-red-500">*</span>
+                </label>
+                <PhotoUploadWithCrop
+                  formId={`child-${index}`}
+                  personType="child"
+                  required
+                  currentPhoto={
+                    child.photo && typeof child.photo === 'object'
+                      ? child.photo.url
+                      : undefined
+                  }
+                  onUploadSuccess={(result) => {
+                    updateChild(index, 'photo', result);
+                  }}
+                  onUploadError={(error) => {
+                    console.error(`Child ${index + 1} photo upload error:`, error);
+                    alert(`Child ${index + 1} photo upload failed: ` + error);
+                  }}
+                />
+                {validationErrors[`child${index}Photo`] && (
+                  <p className="mt-2 text-sm text-red-600">{validationErrors[`child${index}Photo`]}</p>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
     </div>
   );
+
+
 
   const renderReviewStep = () => (
     <div className="space-y-6">
@@ -1530,18 +1584,234 @@ export default function ApplyPage({ params }: ApplyPageProps) {
       </h2>
       <p className="text-gray-600 mb-8">{t.review_subtitle}</p>
 
-      {/* Review sections would go here - showing form data for final review */}
+      {/* Personal Information Review */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h3 className="text-lg font-medium mb-4">Personal Information</h3>
-        <div className="space-y-2 text-sm">
-          <p><strong>Name:</strong> {formData.personalInfo.firstName} {formData.personalInfo.middleName} {formData.personalInfo.lastName}</p>
-          <p><strong>Gender:</strong> {formData.personalInfo.gender}</p>
-          <p><strong>Birth Date:</strong> {formData.personalInfo.birthDate}</p>
-          <p><strong>Birth Place:</strong> {formData.personalInfo.birthCity}, {formData.personalInfo.birthCountry}</p>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-medium">{t.personal_info_title}</h3>
+          <button 
+            onClick={() => setCurrentStep(1)}
+            className="text-blue-600 hover:text-blue-700 text-sm"
+          >
+            Edit
+          </button>
+        </div>
+        <div className="grid md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <p className="text-gray-600">{t.first_name}:</p>
+            <p className="font-medium">{formData.personalInfo.firstName || 'Not provided'}</p>
+          </div>
+          <div>
+            <p className="text-gray-600">{t.last_name}:</p>
+            <p className="font-medium">{formData.personalInfo.lastName || 'Not provided'}</p>
+          </div>
+          <div>
+            <p className="text-gray-600">{t.middle_name}:</p>
+            <p className="font-medium">{formData.personalInfo.middleName || 'Not provided'}</p>
+          </div>
+          <div>
+            <p className="text-gray-600">{t.gender}:</p>
+            <p className="font-medium">{formData.personalInfo.gender ? t[formData.personalInfo.gender as keyof typeof t] : 'Not provided'}</p>
+          </div>
+          <div>
+            <p className="text-gray-600">{t.birth_date}:</p>
+            <p className="font-medium">{formData.personalInfo.birthDate || 'Not provided'}</p>
+          </div>
+          <div>
+            <p className="text-gray-600">{t.birth_city}:</p>
+            <p className="font-medium">{formData.personalInfo.birthCity || 'Not provided'}</p>
+          </div>
+          <div>
+            <p className="text-gray-600">{t.birth_country}:</p>
+            <p className="font-medium">{formData.personalInfo.birthCountry || 'Not provided'}</p>
+          </div>
+          <div>
+            <p className="text-gray-600">{t.country_eligibility}:</p>
+            <p className="font-medium">{formData.personalInfo.countryOfEligibility || 'Not provided'}</p>
+          </div>
+        </div>
+        {formData.personalInfo.photo && (
+          <div className="mt-4">
+            <p className="text-gray-600 text-sm mb-2">Photo:</p>
+            <img 
+              src={formData.personalInfo.photo.url} 
+              alt="Applicant photo" 
+              className="w-24 h-24 object-cover rounded-lg border"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Contact Information Review */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-medium">{t.contact_info_title}</h3>
+          <button 
+            onClick={() => setCurrentStep(2)}
+            className="text-blue-600 hover:text-blue-700 text-sm"
+          >
+            Edit
+          </button>
+        </div>
+        <div className="grid md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <p className="text-gray-600">{t.email_address}:</p>
+            <p className="font-medium">{formData.contactInfo.emailAddress || 'Not provided'}</p>
+          </div>
+          <div>
+            <p className="text-gray-600">{t.phone_number}:</p>
+            <p className="font-medium">{formData.contactInfo.phoneNumber || 'Not provided'}</p>
+          </div>
+          <div>
+            <p className="text-gray-600">{t.current_residence}:</p>
+            <p className="font-medium">{formData.contactInfo.countryOfResidence || 'Not provided'}</p>
+          </div>
+          <div>
+            <p className="text-gray-600">{t.mailing_address}:</p>
+            <p className="font-medium">{formData.contactInfo.mailingAddress || 'Not provided'}</p>
+          </div>
         </div>
       </div>
 
-      {/* Add more review sections */}
+      {/* Education & Work Review */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-medium">{t.education_work_title}</h3>
+          <button 
+            onClick={() => setCurrentStep(3)}
+            className="text-blue-600 hover:text-blue-700 text-sm"
+          >
+            Edit
+          </button>
+        </div>
+        <div className="grid md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <p className="text-gray-600">{t.education_level}:</p>
+            <p className="font-medium">{formData.educationWork.educationLevel ? t[`education_${formData.educationWork.educationLevel}` as keyof typeof t] : 'Not provided'}</p>
+          </div>
+          <div>
+            <p className="text-gray-600">{t.occupation}:</p>
+            <p className="font-medium">{formData.educationWork.occupation || 'Not provided'}</p>
+          </div>
+          <div>
+            <p className="text-gray-600">{t.employer}:</p>
+            <p className="font-medium">{formData.educationWork.employer || 'Not provided'}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Family Information Review */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-medium">Family Information</h3>
+          <button 
+            onClick={() => setCurrentStep(5)}
+            className="text-blue-600 hover:text-blue-700 text-sm"
+          >
+            Edit
+          </button>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <p className="text-gray-600 text-sm">{t.marital_status}:</p>
+            <p className="font-medium">{formData.maritalStatus ? t[formData.maritalStatus as keyof typeof t] : 'Not provided'}</p>
+          </div>
+          
+          {formData.maritalStatus === 'married' && (
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h4 className="font-medium text-blue-900 mb-2">{t.spouse_info_title}</h4>
+              <div className="grid md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-600">Name:</p>
+                  <p className="font-medium">{`${formData.spouseInfo.firstName} ${formData.spouseInfo.middleName} ${formData.spouseInfo.lastName}`.trim() || 'Not provided'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">{t.gender}:</p>
+                  <p className="font-medium">{formData.spouseInfo.gender ? t[formData.spouseInfo.gender as keyof typeof t] : 'Not provided'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">{t.birth_date}:</p>
+                  <p className="font-medium">{formData.spouseInfo.birthDate || 'Not provided'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">{t.birth_city}:</p>
+                  <p className="font-medium">{formData.spouseInfo.birthCity || 'Not provided'}</p>
+                </div>
+              </div>
+              {formData.spouseInfo.photo && (
+                <div className="mt-2">
+                  <img 
+                    src={formData.spouseInfo.photo.url} 
+                    alt="Spouse photo" 
+                    className="w-16 h-16 object-cover rounded-lg border"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+          
+          <div>
+            <p className="text-gray-600 text-sm">{t.number_children}:</p>
+            <p className="font-medium">{formData.numberOfChildren}</p>
+          </div>
+          
+          {formData.children.length > 0 && (
+            <div className="space-y-3">
+              <h4 className="font-medium text-gray-900">{t.children_title}</h4>
+              {formData.children.map((child, index) => (
+                <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                  <h5 className="font-medium text-gray-800 mb-2">{t.child_info.replace('{number}', (index + 1).toString())}</h5>
+                  <div className="grid md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600">Name:</p>
+                      <p className="font-medium">{`${child.firstName} ${child.middleName} ${child.lastName}`.trim() || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">{t.gender}:</p>
+                      <p className="font-medium">{child.gender ? t[child.gender as keyof typeof t] : 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">{t.birth_date}:</p>
+                      <p className="font-medium">{child.birthDate || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">{t.birth_city}:</p>
+                      <p className="font-medium">{child.birthCity || 'Not provided'}</p>
+                    </div>
+                  </div>
+                  {child.photo && (
+                    <div className="mt-2">
+                      <img 
+                        src={child.photo.url} 
+                        alt={`Child ${index + 1} photo`} 
+                        className="w-16 h-16 object-cover rounded-lg border"
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Final Confirmation */}
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+        <div className="flex items-start">
+          <div className="flex-shrink-0">
+            <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-yellow-800">
+              Important Notice
+            </h3>
+            <div className="mt-2 text-sm text-yellow-700">
+              <p>Please review all information carefully. Once submitted, you cannot make changes to your application. Make sure all photos meet the requirements and all information is accurate.</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 
@@ -1646,16 +1916,8 @@ export default function ApplyPage({ params }: ApplyPageProps) {
       case 4:
         return renderPhotoUploadStep();
       case 5:
-        return renderMaritalStatusStep();
+        return renderFamilyStep();
       case 6:
-        return renderChildrenCountStep();
-      case 7:
-        if (formData.numberOfChildren > 0) {
-          return renderChildrenStep();
-        } else {
-          return renderReviewStep();
-        }
-      case 8:
         return renderReviewStep();
       default:
         return renderPersonalInfoStep();
@@ -1677,6 +1939,16 @@ export default function ApplyPage({ params }: ApplyPageProps) {
           <p className="text-lg text-gray-600 mb-6">
             {t.subtitle}
           </p>
+          {/* Auto-save indicator */}
+          {isAutoSaving && (
+            <div className="inline-flex items-center text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Auto-saving...
+            </div>
+          )}
         </div>
 
         {/* Progress Bar */}
@@ -1715,6 +1987,18 @@ export default function ApplyPage({ params }: ApplyPageProps) {
               </button>
             )}
           </div>
+          
+          {/* Validation Error Summary */}
+          {Object.keys(validationErrors).length > 0 && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
+              <h4 className="text-sm font-medium text-red-800 mb-2">Please fix the following errors:</h4>
+              <ul className="text-sm text-red-700 space-y-1">
+                {Object.entries(validationErrors).map(([field, error]) => (
+                  <li key={field}>• {error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
     </div>
