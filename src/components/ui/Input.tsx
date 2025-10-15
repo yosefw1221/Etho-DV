@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import InfoPopup from './InfoPopup';
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
   label?: string;
   error?: string;
   helpText?: string;

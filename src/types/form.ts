@@ -17,11 +17,17 @@ export interface ContactInfo {
   passport_expiry: string;
 }
 
+export interface PhotoData {
+  name: string;
+  url: string;
+  size: number;
+}
+
 export interface BackgroundInfo {
   education_level: string;
   occupation?: string;
   marital_status: 'Single' | 'Married' | '';
-  photo?: File;
+  photo?: File | PhotoData;
 }
 
 export interface FamilyMember {
@@ -44,6 +50,7 @@ export interface DVFormData {
   contact_info: ContactInfo;
   background_info: BackgroundInfo;
   family_members: FamilyMember[];
+  number_of_children: number;
   current_step: number;
   is_complete: boolean;
 }

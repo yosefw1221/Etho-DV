@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
+import { withDBConnection } from '@/middleware/dbConnection';
 import Form from '@/models/Form';
 import Payment from '@/models/Payment';
 import { requireRole } from '@/middleware/auth';
@@ -7,8 +7,7 @@ import { AgentStats } from '@/types/agent';
 
 async function getAgentStatsHandler(request: NextRequest) {
   try {
-    await connectDB();
-    
+
     const userId = (request as any).user.userId;
 
     // Get all forms for this agent
@@ -81,4 +80,4 @@ async function getAgentStatsHandler(request: NextRequest) {
   }
 }
 
-export const GET = requireRole(['agent'])(getAgentStatsHandler);
+export const GET = withDBConnection(requireRole(['agent'])(getAgentStatsHandler));

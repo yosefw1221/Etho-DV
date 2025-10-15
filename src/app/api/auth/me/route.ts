@@ -1,21 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/middleware/auth';
-import connectDB from '@/lib/mongodb';
+import { withDBConnection } from '@/middleware/dbConnection';
 import User from '@/models/User';
 
 async function getUserProfile(request: NextRequest) {
   try {
-    await connectDB();
-    
     // Get user ID from authenticated request
     const userId = (request as any).user.userId;
-    
+
     const user = await User.findById(userId).select('-password');
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     const userResponse = {
@@ -37,7 +32,6 @@ async function getUserProfile(request: NextRequest) {
       success: true,
       user: userResponse,
     });
-
   } catch (error) {
     console.error('Get profile error:', error);
     return NextResponse.json(
@@ -47,4 +41,4 @@ async function getUserProfile(request: NextRequest) {
   }
 }
 
-export const GET = requireAuth(getUserProfile);
+export const GET = withDBConnection(requireAuth(getUserProfile));

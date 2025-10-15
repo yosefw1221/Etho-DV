@@ -1,13 +1,13 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { IUser } from '@/models/User';
+import { IUser } from '@/lib/models/User';
 
 const JWT_SECRET = process.env.NEXTAUTH_SECRET || 'your-secret-key';
 
 export interface TokenPayload {
   userId: string;
   email: string;
-  role: 'user' | 'agent';
+  role: 'user' | 'agent' | 'admin' | 'operator';
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -42,7 +42,9 @@ export function verifyToken(token: string): TokenPayload | null {
   }
 }
 
-export function extractTokenFromHeader(authHeader: string | undefined): string | null {
+export function extractTokenFromHeader(
+  authHeader: string | undefined
+): string | null {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null;
   }

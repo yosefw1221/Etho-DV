@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
+import { withDBConnection } from '@/middleware/dbConnection';
 import User from '@/models/User';
 import { requireAuth } from '@/middleware/auth';
 import { verifyPassword, hashPassword } from '@/lib/auth';
@@ -16,8 +16,7 @@ const passwordChangeSchema = z.object({
 
 async function changePasswordHandler(request: NextRequest) {
   try {
-    await connectDB();
-    
+
     const userId = (request as any).user.userId;
     const body = await request.json();
     const validatedData = passwordChangeSchema.parse(body);
@@ -78,4 +77,4 @@ async function changePasswordHandler(request: NextRequest) {
   }
 }
 
-export const PUT = requireAuth(changePasswordHandler);
+export const PUT = withDBConnection(requireAuth(changePasswordHandler));

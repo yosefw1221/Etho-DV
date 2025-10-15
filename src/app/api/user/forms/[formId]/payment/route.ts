@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
+import { withDBConnection } from '@/middleware/dbConnection';
 import Form from '@/models/Form';
 import Payment from '@/models/Payment';
 import { requireAuth } from '@/middleware/auth';
@@ -15,8 +15,6 @@ async function processPaymentHandler(
   { params }: { params: { formId: string } }
 ) {
   try {
-    await connectDB();
-    
     const userId = (request as any).user.userId;
     const { formId } = params;
     const body = await request.json();
@@ -25,7 +23,7 @@ async function processPaymentHandler(
     // Find the form and verify ownership
     const form = await Form.findOne({
       _id: formId,
-      user_id: userId
+      user_id: userId,
     });
 
     if (!form) {
@@ -54,9 +52,12 @@ async function processPaymentHandler(
       status: 'pending', // In real implementation, this would be 'completed' after verification
       transaction_id: generateTransactionId(),
       metadata: {
-        ip_address: request.ip || 'unknown',
-        user_agent: request.headers.get('user-agent') || 'unknown'
-      }
+        ip_address:
+          request.headers.get('x-forwarded-for') ||
+          request.headers.get('x-real-ip') ||
+          'unknown',
+        user_agent: request.headers.get('user-agent') || 'unknown',
+      },
     };
 
     const payment = new Payment(paymentData);
@@ -80,12 +81,11 @@ async function processPaymentHandler(
       message: 'Payment processed successfully',
       payment_id: payment._id.toString(),
       reference_number: form.reference_number,
-      transaction_id: payment.transaction_id
+      transaction_id: payment.transaction_id,
     });
-
   } catch (error) {
     console.error('Payment processing error:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation failed', details: error.errors },
@@ -113,4 +113,4 @@ function generateReferenceNumber(): string {
   return `DV${year}${timestamp}${random}`;
 }
 
-export const POST = requireAuth(processPaymentHandler);
+export const POST = withDBConnection(requireAuth(processPaymentHandler));

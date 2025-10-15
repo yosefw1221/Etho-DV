@@ -6,7 +6,7 @@ export interface IUser extends Document {
   first_name: string;
   last_name: string;
   phone: string;
-  role: 'user' | 'agent';
+  role: 'user' | 'agent' | 'admin' | 'operator';
   language_preference: 'en' | 'am' | 'ti' | 'or';
   // Agent-specific fields
   business_name?: string;
@@ -17,77 +17,80 @@ export interface IUser extends Document {
   updated_at: Date;
 }
 
-const UserSchema: Schema = new Schema({
-  email: {
-    type: String,
-    required: [true, 'Email is required'],
-    unique: true,
-    lowercase: true,
-    trim: true,
-    match: [
-      /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-      'Please enter a valid email'
-    ]
+const UserSchema: Schema = new Schema(
+  {
+    email: {
+      type: String,
+      required: [true, 'Email is required'],
+      unique: true,
+      lowercase: true,
+      trim: true,
+      match: [
+        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+        'Please enter a valid email',
+      ],
+    },
+    password: {
+      type: String,
+      required: [true, 'Password is required'],
+      minlength: [8, 'Password must be at least 8 characters'],
+    },
+    first_name: {
+      type: String,
+      required: [true, 'First name is required'],
+      trim: true,
+    },
+    last_name: {
+      type: String,
+      required: [true, 'Last name is required'],
+      trim: true,
+    },
+    phone: {
+      type: String,
+      required: [true, 'Phone number is required'],
+      trim: true,
+    },
+    role: {
+      type: String,
+      enum: ['user', 'agent', 'admin', 'operator'],
+      default: 'user',
+    },
+    language_preference: {
+      type: String,
+      enum: ['en', 'am', 'ti', 'or'],
+      default: 'en',
+    },
+    // Agent-specific fields
+    business_name: {
+      type: String,
+      required: function (this: IUser) {
+        return this.role === 'agent';
+      },
+    },
+    total_submissions: {
+      type: Number,
+      default: 0,
+    },
+    current_tier: {
+      type: String,
+      enum: ['bronze', 'silver', 'gold'],
+      default: 'bronze',
+    },
+    discount_rate: {
+      type: Number,
+      default: 0,
+    },
   },
-  password: {
-    type: String,
-    required: [true, 'Password is required'],
-    minlength: [8, 'Password must be at least 8 characters']
-  },
-  first_name: {
-    type: String,
-    required: [true, 'First name is required'],
-    trim: true
-  },
-  last_name: {
-    type: String,
-    required: [true, 'Last name is required'],
-    trim: true
-  },
-  phone: {
-    type: String,
-    required: [true, 'Phone number is required'],
-    trim: true
-  },
-  role: {
-    type: String,
-    enum: ['user', 'agent'],
-    default: 'user'
-  },
-  language_preference: {
-    type: String,
-    enum: ['en', 'am', 'ti', 'or'],
-    default: 'en'
-  },
-  // Agent-specific fields
-  business_name: {
-    type: String,
-    required: function(this: IUser) {
-      return this.role === 'agent';
-    }
-  },
-  total_submissions: {
-    type: Number,
-    default: 0
-  },
-  current_tier: {
-    type: String,
-    enum: ['bronze', 'silver', 'gold'],
-    default: 'bronze'
-  },
-  discount_rate: {
-    type: Number,
-    default: 0
+  {
+    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
   }
-}, {
-  timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
-});
+);
 
 // Update tier and discount rate based on total submissions
-UserSchema.pre('save', function(next) {
+UserSchema.pre('save', function (next) {
   if (this.role === 'agent' && this.isModified('total_submissions')) {
-    const submissions = this.total_submissions || 0;
-    
+    const submissions = Number(this.total_submissions) || 0;
+
     if (submissions >= 50) {
       this.current_tier = 'gold';
       this.discount_rate = 50; // 50 ETB per form
@@ -102,4 +105,5 @@ UserSchema.pre('save', function(next) {
   next();
 });
 
-export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+export default mongoose.models.User ||
+  mongoose.model<IUser>('User', UserSchema);

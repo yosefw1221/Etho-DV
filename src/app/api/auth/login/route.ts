@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
+import { withDBConnection } from '@/middleware/dbConnection';
 import User from '@/models/User';
 import { verifyPassword, generateToken } from '@/lib/auth';
 import { z } from 'zod';
@@ -9,13 +9,11 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
-export async function POST(request: NextRequest) {
+async function loginHandler(request: NextRequest) {
   try {
-    await connectDB();
-    
     const body = await request.json();
     const validatedData = loginSchema.parse(body);
-    
+
     const { email, password } = validatedData;
 
     // Find user by email
@@ -56,10 +54,9 @@ export async function POST(request: NextRequest) {
       user: userResponse,
       token,
     });
-
   } catch (error) {
     console.error('Login error:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation failed', details: error.errors },
@@ -73,3 +70,5 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export const POST = withDBConnection(loginHandler);

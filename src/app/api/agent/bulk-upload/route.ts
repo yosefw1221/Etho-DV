@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
+import { withDBConnection } from '@/middleware/dbConnection';
 import Form from '@/models/Form';
 import User from '@/models/User';
 import { requireRole } from '@/middleware/auth';
@@ -11,18 +11,26 @@ const csvRowSchema = z.object({
   first_name: z.string().min(1, 'First name is required'),
   middle_name: z.string().optional(),
   last_name: z.string().min(1, 'Last name is required'),
-  date_of_birth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
+  date_of_birth: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
   place_of_birth: z.string().min(1, 'Place of birth is required'),
-  gender: z.enum(['Male', 'Female'], { errorMap: () => ({ message: 'Gender must be Male or Female' }) }),
+  gender: z.enum(['Male', 'Female'], {
+    errorMap: () => ({ message: 'Gender must be Male or Female' }),
+  }),
   country_of_birth: z.string().min(1, 'Country of birth is required'),
   address: z.string().min(1, 'Address is required'),
   phone: z.string().min(8, 'Phone number is required'),
   email: z.string().email('Invalid email format'),
   passport_number: z.string().min(1, 'Passport number is required'),
-  passport_expiry: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid passport expiry date format'),
+  passport_expiry: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid passport expiry date format'),
   education_level: z.string().min(1, 'Education level is required'),
   occupation: z.string().optional(),
-  marital_status: z.enum(['Single', 'Married'], { errorMap: () => ({ message: 'Marital status must be Single or Married' }) }),
+  marital_status: z.enum(['Single', 'Married'], {
+    errorMap: () => ({ message: 'Marital status must be Single or Married' }),
+  }),
   // Optional spouse fields
   spouse_first_name: z.string().optional(),
   spouse_last_name: z.string().optional(),
@@ -62,20 +70,19 @@ interface ValidationError {
 
 async function bulkUploadHandler(request: NextRequest) {
   try {
-    await connectDB();
-    
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    
+
     if (!file) {
-      return NextResponse.json(
-        { error: 'No file provided' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
     // Check file type
-    if (!file.name.endsWith('.csv') && !file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+    if (
+      !file.name.endsWith('.csv') &&
+      !file.name.endsWith('.xlsx') &&
+      !file.name.endsWith('.xls')
+    ) {
       return NextResponse.json(
         { error: 'Unsupported file format. Please upload CSV or Excel files.' },
         { status: 400 }
@@ -91,40 +98,38 @@ async function bulkUploadHandler(request: NextRequest) {
     }
 
     const userId = (request as any).user.userId;
-    
+
     // Get user info for tier calculation
     const user = await User.findById(userId);
     if (!user || user.role !== 'agent') {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     // Read and parse CSV file
     const fileText = await file.text();
-    
+
     const parseResult = Papa.parse(fileText, {
       header: true,
       skipEmptyLines: true,
-      transformHeader: (header) => header.trim().toLowerCase().replace(/\s+/g, '_')
+      transformHeader: (header) =>
+        header.trim().toLowerCase().replace(/\s+/g, '_'),
     });
 
     if (parseResult.errors.length > 0) {
-      return NextResponse.json({
-        success: false,
-        error: 'CSV parsing failed',
-        details: parseResult.errors
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'CSV parsing failed',
+          details: parseResult.errors,
+        },
+        { status: 400 }
+      );
     }
 
     const csvData = parseResult.data as any[];
-    
+
     if (csvData.length === 0) {
-      return NextResponse.json(
-        { error: 'CSV file is empty' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'CSV file is empty' }, { status: 400 });
     }
 
     if (csvData.length > 1000) {
@@ -140,30 +145,29 @@ async function bulkUploadHandler(request: NextRequest) {
 
     csvData.forEach((row, index) => {
       const rowNumber = index + 2; // +2 because index starts at 0 and we skip header
-      
+
       try {
         // Basic validation
         const validatedRow = csvRowSchema.parse(row);
-        
+
         // Additional business logic validation
         const additionalErrors = validateBusinessRules(validatedRow, rowNumber);
         validationErrors.push(...additionalErrors);
-        
+
         if (additionalErrors.length === 0) {
           validRows.push({
             ...validatedRow,
-            row_number: rowNumber
+            row_number: rowNumber,
           });
         }
-        
       } catch (error) {
         if (error instanceof z.ZodError) {
-          error.errors.forEach(err => {
+          error.errors.forEach((err) => {
             validationErrors.push({
               row: rowNumber,
               field: err.path.join('.'),
               value: row[err.path[0]] || '',
-              error: err.message
+              error: err.message,
             });
           });
         }
@@ -178,12 +182,16 @@ async function bulkUploadHandler(request: NextRequest) {
 
     // If validation passed, optionally create draft forms
     let createdForms: string[] = [];
-    
+
     if (validationErrors.length === 0) {
       // Create draft forms in database
       for (const rowData of validRows) {
         try {
-          const form = await createFormFromRowData(rowData, userId, ratePerForm);
+          const form = await createFormFromRowData(
+            rowData,
+            userId,
+            ratePerForm
+          );
           createdForms.push(form._id.toString());
         } catch (error) {
           console.error('Error creating form:', error);
@@ -191,7 +199,7 @@ async function bulkUploadHandler(request: NextRequest) {
             row: rowData.row_number,
             field: 'general',
             value: '',
-            error: 'Failed to create form in database'
+            error: 'Failed to create form in database',
           });
         }
       }
@@ -206,9 +214,8 @@ async function bulkUploadHandler(request: NextRequest) {
       rate_per_form: ratePerForm,
       current_tier: currentTier,
       created_forms: createdForms,
-      upload_id: Date.now().toString() // For tracking
+      upload_id: Date.now().toString(), // For tracking
     });
-
   } catch (error) {
     console.error('Bulk upload error:', error);
     return NextResponse.json(
@@ -224,13 +231,13 @@ function validateBusinessRules(row: any, rowNumber: number): ValidationError[] {
   // Check age validation
   const birthDate = new Date(row.date_of_birth);
   const age = new Date().getFullYear() - birthDate.getFullYear();
-  
+
   if (age < 18 || age > 100) {
     errors.push({
       row: rowNumber,
       field: 'date_of_birth',
       value: row.date_of_birth,
-      error: 'Age must be between 18 and 100 years'
+      error: 'Age must be between 18 and 100 years',
     });
   }
 
@@ -241,7 +248,7 @@ function validateBusinessRules(row: any, rowNumber: number): ValidationError[] {
       row: rowNumber,
       field: 'passport_expiry',
       value: row.passport_expiry,
-      error: 'Passport must not be expired'
+      error: 'Passport must not be expired',
     });
   }
 
@@ -252,16 +259,16 @@ function validateBusinessRules(row: any, rowNumber: number): ValidationError[] {
         row: rowNumber,
         field: 'spouse_first_name',
         value: row.spouse_first_name || '',
-        error: 'Spouse name is required for married applicants'
+        error: 'Spouse name is required for married applicants',
       });
     }
-    
+
     if (!row.spouse_date_of_birth) {
       errors.push({
         row: rowNumber,
         field: 'spouse_date_of_birth',
         value: row.spouse_date_of_birth || '',
-        error: 'Spouse date of birth is required for married applicants'
+        error: 'Spouse date of birth is required for married applicants',
       });
     }
   }
@@ -272,23 +279,23 @@ function validateBusinessRules(row: any, rowNumber: number): ValidationError[] {
     if (childDob) {
       const childBirthDate = new Date(childDob);
       const childAge = new Date().getFullYear() - childBirthDate.getFullYear();
-      
+
       if (childAge >= 21) {
         errors.push({
           row: rowNumber,
           field: `child${i}_date_of_birth`,
           value: childDob,
-          error: 'Children must be under 21 years old'
+          error: 'Children must be under 21 years old',
         });
       }
-      
+
       // If child DOB is provided, name is required
       if (!row[`child${i}_first_name`] || !row[`child${i}_last_name`]) {
         errors.push({
           row: rowNumber,
           field: `child${i}_first_name`,
           value: row[`child${i}_first_name`] || '',
-          error: 'Child name is required when date of birth is provided'
+          error: 'Child name is required when date of birth is provided',
         });
       }
     }
@@ -297,7 +304,11 @@ function validateBusinessRules(row: any, rowNumber: number): ValidationError[] {
   return errors;
 }
 
-async function createFormFromRowData(rowData: any, userId: string, costPerForm: number) {
+async function createFormFromRowData(
+  rowData: any,
+  userId: string,
+  costPerForm: number
+) {
   // Create primary applicant data
   const applicantData = {
     first_name: rowData.first_name,
@@ -314,7 +325,7 @@ async function createFormFromRowData(rowData: any, userId: string, costPerForm: 
     passport_expiry: new Date(rowData.passport_expiry),
     education_level: rowData.education_level,
     occupation: rowData.occupation || '',
-    marital_status: rowData.marital_status
+    marital_status: rowData.marital_status,
   };
 
   // Create family members array
@@ -329,10 +340,15 @@ async function createFormFromRowData(rowData: any, userId: string, costPerForm: 
       last_name: rowData.spouse_last_name,
       date_of_birth: new Date(rowData.spouse_date_of_birth),
       place_of_birth: rowData.spouse_place_of_birth || rowData.place_of_birth,
-      gender: rowData.spouse_gender || (rowData.gender === 'Male' ? 'Female' : 'Male'),
-      country_of_birth: rowData.spouse_country_of_birth || rowData.country_of_birth,
+      gender:
+        rowData.spouse_gender ||
+        (rowData.gender === 'Male' ? 'Female' : 'Male'),
+      country_of_birth:
+        rowData.spouse_country_of_birth || rowData.country_of_birth,
       passport_number: rowData.spouse_passport_number || '',
-      passport_expiry: rowData.spouse_passport_expiry ? new Date(rowData.spouse_passport_expiry) : undefined
+      passport_expiry: rowData.spouse_passport_expiry
+        ? new Date(rowData.spouse_passport_expiry)
+        : undefined,
     });
   }
 
@@ -346,9 +362,11 @@ async function createFormFromRowData(rowData: any, userId: string, costPerForm: 
         middle_name: '',
         last_name: rowData[`child${i}_last_name`],
         date_of_birth: new Date(rowData[`child${i}_date_of_birth`]),
-        place_of_birth: rowData[`child${i}_place_of_birth`] || rowData.place_of_birth,
+        place_of_birth:
+          rowData[`child${i}_place_of_birth`] || rowData.place_of_birth,
         gender: rowData[`child${i}_gender`] || 'Male',
-        country_of_birth: rowData[`child${i}_country_of_birth`] || rowData.country_of_birth
+        country_of_birth:
+          rowData[`child${i}_country_of_birth`] || rowData.country_of_birth,
       });
     }
   }
@@ -356,16 +374,16 @@ async function createFormFromRowData(rowData: any, userId: string, costPerForm: 
   // Create the form
   const form = new Form({
     user_id: userId,
-    applicant_data,
+    applicant_data: applicantData,
     family_members: familyMembers,
     photos: [],
     payment_amount: costPerForm,
     payment_currency: 'ETB',
     payment_status: 'pending',
-    processing_status: 'draft'
+    processing_status: 'draft',
   });
 
   return await form.save();
 }
 
-export const POST = requireRole(['agent'])(bulkUploadHandler);
+export const POST = withDBConnection(requireRole(['agent'])(bulkUploadHandler));

@@ -6,7 +6,6 @@ import User from '@/models/User';
 export interface AuthenticatedRequest extends NextRequest {
   user?: TokenPayload & {
     id: string;
-    role: 'user' | 'agent';
   };
 }
 
@@ -16,7 +15,7 @@ export async function authenticateUser(request: NextRequest): Promise<{
 }> {
   try {
     const authHeader = request.headers.get('authorization');
-    const token = extractTokenFromHeader(authHeader);
+    const token = extractTokenFromHeader(authHeader!);
 
     if (!token) {
       return { user: null, error: 'No token provided' };
@@ -41,8 +40,10 @@ export async function authenticateUser(request: NextRequest): Promise<{
   }
 }
 
-export function requireAuth(handler: (req: AuthenticatedRequest) => Promise<NextResponse>) {
-  return async (request: NextRequest) => {
+export function requireAuth(
+  handler: (req: AuthenticatedRequest, context?: any) => Promise<NextResponse>
+) {
+  return async (request: NextRequest, context?: any) => {
     const { user, error } = await authenticateUser(request);
 
     if (error || !user) {
@@ -53,14 +54,21 @@ export function requireAuth(handler: (req: AuthenticatedRequest) => Promise<Next
     }
 
     // Add user to request object
-    (request as AuthenticatedRequest).user = user;
-    
-    return handler(request as AuthenticatedRequest);
+    (request as AuthenticatedRequest).user = {
+      ...user,
+      id: user.userId,
+    };
+
+    return handler(request as AuthenticatedRequest, context);
   };
 }
 
-export function requireRole(allowedRoles: ('user' | 'agent')[]) {
-  return function(handler: (req: AuthenticatedRequest) => Promise<NextResponse>) {
+export function requireRole(
+  allowedRoles: ('user' | 'agent' | 'admin' | 'operator')[]
+) {
+  return function (
+    handler: (req: AuthenticatedRequest) => Promise<NextResponse>
+  ) {
     return async (request: NextRequest) => {
       const { user, error } = await authenticateUser(request);
 
@@ -79,8 +87,11 @@ export function requireRole(allowedRoles: ('user' | 'agent')[]) {
       }
 
       // Add user to request object
-      (request as AuthenticatedRequest).user = user;
-      
+      (request as AuthenticatedRequest).user = {
+        ...user,
+        id: user.userId,
+      };
+
       return handler(request as AuthenticatedRequest);
     };
   };

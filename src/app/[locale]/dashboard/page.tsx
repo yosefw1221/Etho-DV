@@ -108,26 +108,60 @@ const content = {
 
 export default function DashboardPage({ params }: DashboardPageProps) {
   const [locale, setLocale] = useState<string>('en');
-  const [applications, setApplications] = useState([
-    {
-      id: 1,
-      status: 'submitted',
-      dateSubmitted: '2024-01-15',
-      confirmationNumber: 'DV2025-001234'
-    },
-    {
-      id: 2,
-      status: 'processing',
-      dateSubmitted: '2024-01-10',
-      confirmationNumber: 'DV2025-001235'
-    }
-  ]);
+  const [applications, setApplications] = useState<any[]>([]);
+  const [user, setUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     params.then(({ locale: resolvedLocale }) => {
       setLocale(resolvedLocale);
     });
   }, [params]);
+
+  useEffect(() => {
+    // Check authentication and load user data
+    const checkAuth = async () => {
+      const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+      const userData = localStorage.getItem('user');
+      
+      if (!token || !userData) {
+        // Redirect to login if not authenticated
+        window.location.href = `/${locale}/login`;
+        return;
+      }
+
+      try {
+        // Parse user data
+        const parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
+
+        // Fetch user's applications
+        const response = await fetch('/api/user/applications', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setApplications(data.applications || []);
+        } else if (response.status === 401) {
+          // Token expired, redirect to login
+          localStorage.removeItem('token');
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('user');
+          window.location.href = `/${locale}/login`;
+        }
+      } catch (error) {
+        console.error('Failed to load dashboard data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [locale]);
 
   const t = content[locale as keyof typeof content] || content.en;
 
@@ -140,11 +174,29 @@ export default function DashboardPage({ params }: DashboardPageProps) {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user');
+    window.location.href = `/${locale}/login`;
+  };
+
   const stats = {
     total: applications.length,
     pending: applications.filter(app => app.status === 'submitted' || app.status === 'processing').length,
     success: applications.filter(app => app.status === 'completed').length
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -169,13 +221,21 @@ export default function DashboardPage({ params }: DashboardPageProps) {
               >
                 {t.new_application}
               </Link>
+              <button
+                onClick={handleLogout}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md transition-colors"
+              >
+                {t.logout}
+              </button>
             </div>
           </div>
         </div>
 
         {/* Welcome Message */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">{t.welcome}</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            {user ? `Welcome back, ${user.first_name || user.email}!` : t.welcome}
+          </h2>
           <p className="text-gray-600">
             {t.subtitle}
           </p>

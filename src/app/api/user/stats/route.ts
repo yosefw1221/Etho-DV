@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
+import { withDBConnection } from '@/middleware/dbConnection';
 import Form from '@/models/Form';
 import { requireAuth } from '@/middleware/auth';
 
 async function getUserStatsHandler(request: NextRequest) {
   try {
-    await connectDB();
-    
+
     const userId = (request as any).user.userId;
 
     // Get all forms for this user
@@ -47,4 +46,4 @@ async function getUserStatsHandler(request: NextRequest) {
   }
 }
 
-export const GET = requireAuth(getUserStatsHandler);
+export const GET = withDBConnection(requireAuth(getUserStatsHandler));

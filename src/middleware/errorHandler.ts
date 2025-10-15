@@ -15,7 +15,12 @@ export class APIError extends Error {
   public code?: string;
   public details?: any;
 
-  constructor(message: string, statusCode: number = 500, code?: string, details?: any) {
+  constructor(
+    message: string,
+    statusCode: number = 500,
+    code?: string,
+    details?: any
+  ) {
     super(message);
     this.statusCode = statusCode;
     this.code = code;
@@ -36,14 +41,14 @@ export function createErrorResponse(
     const errorResponse: ErrorResponse = {
       error: 'Validation Error',
       message: 'Request validation failed',
-      details: error.errors.map(err => ({
+      details: error.errors.map((err) => ({
         field: err.path.join('.'),
         message: err.message,
-        code: err.code
+        code: err.code,
       })),
       code: 'VALIDATION_ERROR',
       timestamp,
-      path
+      path,
     };
 
     return NextResponse.json(errorResponse, { status: 400 });
@@ -56,7 +61,7 @@ export function createErrorResponse(
       code: error.code,
       details: error.details,
       timestamp,
-      path
+      path,
     };
 
     return NextResponse.json(errorResponse, { status: error.statusCode });
@@ -70,7 +75,7 @@ export function createErrorResponse(
       details: (error as any).errors,
       code: 'DB_VALIDATION_ERROR',
       timestamp,
-      path
+      path,
     };
 
     return NextResponse.json(errorResponse, { status: 400 });
@@ -83,7 +88,7 @@ export function createErrorResponse(
       message: `${field} already exists`,
       code: 'DUPLICATE_ENTRY',
       timestamp,
-      path
+      path,
     };
 
     return NextResponse.json(errorResponse, { status: 409 });
@@ -96,7 +101,7 @@ export function createErrorResponse(
       message: 'Authentication token is invalid',
       code: 'INVALID_TOKEN',
       timestamp,
-      path
+      path,
     };
 
     return NextResponse.json(errorResponse, { status: 401 });
@@ -108,7 +113,7 @@ export function createErrorResponse(
       message: 'Authentication token has expired',
       code: 'TOKEN_EXPIRED',
       timestamp,
-      path
+      path,
     };
 
     return NextResponse.json(errorResponse, { status: 401 });
@@ -116,13 +121,16 @@ export function createErrorResponse(
 
   // Handle generic errors
   console.error('Unhandled error:', error);
-  
+
   const errorResponse: ErrorResponse = {
     error: 'Internal Server Error',
-    message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong',
+    message:
+      process.env.NODE_ENV === 'development'
+        ? error.message
+        : 'Something went wrong',
     code: 'INTERNAL_ERROR',
     timestamp,
-    path
+    path,
   };
 
   return NextResponse.json(errorResponse, { status: 500 });
@@ -147,28 +155,36 @@ export function withRateLimit(
 ) {
   const requests = new Map<string, { count: number; resetTime: number }>();
 
-  return function(handler: (request: NextRequest, ...args: any[]) => Promise<NextResponse>) {
+  return function (
+    handler: (request: NextRequest, ...args: any[]) => Promise<NextResponse>
+  ) {
     return async (request: NextRequest, ...args: any[]) => {
-      const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
+      const ip =
+        request.headers.get('x-forwarded-for') ||
+        request.headers.get('x-real-ip') ||
+        'unknown';
       const now = Date.now();
-      
+
       const userRequests = requests.get(ip);
-      
+
       if (!userRequests || now > userRequests.resetTime) {
         requests.set(ip, { count: 1, resetTime: now + windowMs });
         return handler(request, ...args);
       }
-      
+
       if (userRequests.count >= maxRequests) {
-        return NextResponse.json({
-          error: 'Too Many Requests',
-          message: 'Rate limit exceeded. Please try again later.',
-          code: 'RATE_LIMIT_EXCEEDED',
-          timestamp: new Date().toISOString(),
-          path: new URL(request.url).pathname
-        }, { status: 429 });
+        return NextResponse.json(
+          {
+            error: 'Too Many Requests',
+            message: 'Rate limit exceeded. Please try again later.',
+            code: 'RATE_LIMIT_EXCEEDED',
+            timestamp: new Date().toISOString(),
+            path: new URL(request.url).pathname,
+          },
+          { status: 429 }
+        );
       }
-      
+
       userRequests.count++;
       return handler(request, ...args);
     };
@@ -177,7 +193,13 @@ export function withRateLimit(
 
 // Request validation middleware
 export function validateRequest<T>(schema: any) {
-  return function(handler: (request: NextRequest, data: T, ...args: any[]) => Promise<NextResponse>) {
+  return function (
+    handler: (
+      request: NextRequest,
+      data: T,
+      ...args: any[]
+    ) => Promise<NextResponse>
+  ) {
     return async (request: NextRequest, ...args: any[]) => {
       try {
         const body = await request.json();
@@ -202,5 +224,5 @@ export const ErrorCodes = {
   DUPLICATE_ENTRY: 'DUPLICATE_ENTRY',
   RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED',
   PAYMENT_REQUIRED: 'PAYMENT_REQUIRED',
-  INTERNAL_ERROR: 'INTERNAL_ERROR'
+  INTERNAL_ERROR: 'INTERNAL_ERROR',
 } as const;

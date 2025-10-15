@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
-import User from '@/models/User';
+import { ensureDBConnection } from '@/middleware/dbConnection';
+import User from '@/lib/models/User';
 import { hashPassword, generateToken } from '@/lib/auth';
 import { z } from 'zod';
 
@@ -17,12 +17,21 @@ const registerSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    await connectDB();
-    
+    await ensureDBConnection();
+
     const body = await request.json();
     const validatedData = registerSchema.parse(body);
-    
-    const { email, password, first_name, last_name, phone, role, language_preference, business_name } = validatedData;
+
+    const {
+      email,
+      password,
+      first_name,
+      last_name,
+      phone,
+      role,
+      language_preference,
+      business_name,
+    } = validatedData;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -48,46 +57,45 @@ export async function POST(request: NextRequest) {
     const userData: any = {
       email,
       password: hashedPassword,
-      first_name,
-      last_name,
+      firstName: first_name,
+      lastName: last_name,
       phone,
       role,
-      language_preference,
+      languagePreference: language_preference,
     };
 
     if (role === 'agent') {
-      userData.business_name = business_name;
+      userData.businessName = business_name;
     }
 
     const user = new User(userData);
     await user.save();
 
     // Generate token
-    const token = generateToken(user);
+    const token = generateToken(user as any);
 
     // Remove password from response
     const userResponse = {
       id: user._id,
       email: user.email,
-      first_name: user.first_name,
-      last_name: user.last_name,
+      firstName: user.firstName,
+      lastName: user.lastName,
       phone: user.phone,
       role: user.role,
-      language_preference: user.language_preference,
-      business_name: user.business_name,
-      current_tier: user.current_tier,
-      discount_rate: user.discount_rate,
+      languagePreference: user.languagePreference,
     };
 
-    return NextResponse.json({
-      success: true,
-      user: userResponse,
-      token,
-    }, { status: 201 });
-
+    return NextResponse.json(
+      {
+        success: true,
+        user: userResponse,
+        token,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Registration error:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation failed', details: error.errors },
@@ -96,7 +104,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error' + (error as any).toString() },
       { status: 500 }
     );
   }

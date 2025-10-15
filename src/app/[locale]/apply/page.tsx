@@ -2,217 +2,1663 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { ChevronLeftIcon, ChevronRightIcon, CheckIcon } from '@heroicons/react/24/outline';
+import PhotoUploadWithCrop from '@/components/forms/PhotoUploadWithCrop';
 
 type ApplyPageProps = {
   params: Promise<{ locale: string }>;
 };
 
-type FormData = {
+type PersonalInfo = {
+  lastName: string;
   firstName: string;
   middleName: string;
-  lastName: string;
-  dateOfBirth: string;
-  placeOfBirth: string;
   gender: string;
-  passportNumber: string;
-  passportExpiry: string;
-  phone: string;
-  address: string;
-  education: string;
+  birthDate: string;
+  birthCity: string;
+  birthCountry: string;
+  countryOfEligibility: string;
+  photo: any;
+};
+
+type ContactInfo = {
+  mailingAddress: string;
+  mailingCity: string;
+  mailingState: string;
+  mailingPostalCode: string;
+  mailingCountry: string;
+  countryOfResidence: string;
+  phoneNumber: string;
+  emailAddress: string;
+};
+
+type EducationWork = {
+  educationLevel: string;
+  workExperience: string;
+  occupation: string;
+  employer: string;
+};
+
+type SpouseInfo = {
+  lastName: string;
+  firstName: string;
+  middleName: string;
+  gender: string;
+  birthDate: string;
+  birthCity: string;
+  birthCountry: string;
+  photo: any;
+};
+
+type ChildInfo = {
+  lastName: string;
+  firstName: string;
+  middleName: string;
+  gender: string;
+  birthDate: string;
+  birthCity: string;
+  birthCountry: string;
+  photo: any;
+};
+
+type FormData = {
+  personalInfo: PersonalInfo;
+  contactInfo: ContactInfo;
+  educationWork: EducationWork;
   maritalStatus: string;
-  photo: File | null;
+  spouseInfo: SpouseInfo;
+  numberOfChildren: number;
+  children: ChildInfo[];
 };
 
 const content = {
   en: {
-    title: 'Apply for DV Lottery',
-    subtitle: 'Complete your DV lottery application in just a few minutes',
-    personal_info: 'Personal Information',
+    title: 'DV Lottery Application - DS-5501 Form',
+    subtitle: 'Electronic Diversity Visa Entry Form',
+    
+    // Navigation
+    back_home: 'Back to Home',
+    previous: 'Previous',
+    next: 'Next',
+    submit: 'Submit Application',
+    
+    // Steps
+    step_1: 'Personal Information',
+    step_2: 'Contact Information', 
+    step_3: 'Education & Work',
+    step_4: 'Spouse Information',
+    step_5: 'Children Information',
+    step_6: 'Review & Submit',
+    
+    // Step 1 - Personal Information
+    personal_info_title: 'Part 1: Personal Information',
+    last_name: 'Last/Family Name',
     first_name: 'First Name',
-    middle_name: 'Middle Name (Optional)',
-    last_name: 'Last Name',
-    date_of_birth: 'Date of Birth',
-    place_of_birth: 'Place of Birth',
+    middle_name: 'Middle Name',
     gender: 'Gender',
     male: 'Male',
     female: 'Female',
-    passport_number: 'Passport Number',
-    passport_expiry: 'Passport Expiry Date',
-    phone: 'Phone Number',
-    address: 'Address',
-    education: 'Education Level',
-    marital_status: 'Marital Status',
-    single: 'Single',
-    married: 'Married',
+    birth_date: 'Birth Date',
+    birth_city: 'Birth City',
+    birth_country: 'Birth Country',
+    country_eligibility: 'Country of Eligibility for the DV Program',
     upload_photo: 'Upload Photo',
-    next: 'Next',
-    back_home: 'Back to Home',
+    photo_requirements: 'Photo must be taken within the last 6 months',
+    
+    // Step 2 - Contact Information
+    contact_info_title: 'Part 2: Contact Information',
+    mailing_address: 'Mailing Address (Optional)',
+    mailing_city: 'City',
+    mailing_state: 'State/Province',
+    mailing_postal: 'Postal Code',
+    mailing_country: 'Country',
+    current_residence: 'Country of Current Residence',
+    phone_number: 'Phone Number (Optional)',
+    email_address: 'Email Address',
+    
+    // Step 3 - Education & Work
+    education_work_title: 'Part 3: Education & Work Experience',
+    education_level: 'Education Level',
+    education_primary: 'Primary School Only',
+    education_high_school: 'High School, No Degree',
+    education_high_school_degree: 'High School with Degree',
+    education_vocational: 'Vocational School',
+    education_university: 'Some University Courses',
+    education_university_degree: 'University Degree',
+    education_graduate: 'Some Graduate Level Courses',
+    education_graduate_degree: 'Graduate Degree',
+    education_doctorate: 'Doctorate Degree',
+    work_experience: 'Work Experience (if no high school degree)',
+    occupation: 'Occupation',
+    employer: 'Employer',
+    
+    // Step 4 - Marital Status & Spouse
+    marital_status_title: 'Part 4: Marital Status',
+    marital_status: 'Marital Status',
+    unmarried: 'Unmarried',
+    married: 'Married',
+    divorced: 'Divorced',
+    widowed: 'Widowed',
+    legally_separated: 'Legally Separated',
+    spouse_info_title: 'Spouse Information',
+    spouse_required: 'You must include your spouse even if you do not intend for them to immigrate',
+    
+    // Step 5 - Children
+    children_title: 'Part 5: Children Information',
+    number_children: 'Number of Children',
+    children_note: 'List ALL unmarried children under 21 years of age. Include all biological children and legally adopted children. Do NOT include children who are already U.S. citizens or lawful permanent residents.',
+    child_info: 'Child {number} Information',
+    add_child: 'Add Child',
+    remove_child: 'Remove Child',
+    
+    // Step 6 - Review
+    review_title: 'Review Your Application',
+    review_subtitle: 'Please review all information carefully before submitting',
+    
+    // Common
     required: 'Required',
-    step_1_of_4: 'Step 1 of 4'
+    optional: 'Optional',
+    yes: 'Yes',
+    no: 'No',
+    
+    // Validation
+    validation_required: 'This field is required',
+    validation_email: 'Please enter a valid email address',
+    validation_phone: 'Please enter a valid phone number',
+    validation_date: 'Please enter a valid date',
+    
+    // Countries (sample - you'd include full list)
+    ethiopia: 'Ethiopia',
+    usa: 'United States',
+    
+    // Success
+    success_title: 'Application Submitted Successfully!',
+    success_message: 'Your DV Lottery application has been submitted. Please save your confirmation number for your records.',
+    confirmation_number: 'Confirmation Number',
   },
+  
   am: {
-    title: 'የዲቪ ሎተሪ ማመልከቻ',
-    subtitle: 'የዲቪ ሎተሪ ማመልከቻዎን በደቂቃዎች ውስጥ ያጠናቅቁ',
-    personal_info: 'የግል መረጃ',
-    first_name: 'ስም',
-    middle_name: 'የአባት ስም (አማራጭ)',
+    title: 'የዲቪ ሎተሪ ማመልከቻ - DS-5501 ፎርም',
+    subtitle: 'ኤሌክትሮኒክ የዳይቨርሲቲ ቪዛ ግቤት ፎርም',
+
+    // Navigation
+    back_home: 'ወደ መነሻ ይመለሱ',
+    previous: 'ቀዳሚ',
+    next: 'ቀጣይ',
+    submit: 'ማመልከቻ ይላኩ',
+
+    // Steps
+    step_1: 'የግል መረጃ',
+    step_2: 'የእውቂያ መረጃ',
+    step_3: 'ትምህርት እና ስራ',
+    step_4: 'የባል/ሚስት መረጃ',
+    step_5: 'የልጆች መረጃ',
+    step_6: 'ግምገማ እና ማስገባት',
+
+    // Step 1 - Personal Information
+    personal_info_title: 'ክፍል 1፡ የግል መረጃ',
     last_name: 'የአያት ስም',
-    date_of_birth: 'የትውልድ ቀን',
-    place_of_birth: 'የትውልድ ቦታ',
+    first_name: 'ስም',
+    middle_name: 'የአባት ስም',
     gender: 'ጾታ',
     male: 'ወንድ',
     female: 'ሴት',
-    passport_number: 'የፓስፖርት ቁጥር',
-    passport_expiry: 'የፓስፖርት ማብቂያ ቀን',
-    phone: 'የቴሌፎን ቁጥር',
-    address: 'አድራሻ',
-    education: 'የትምህርት ደረጃ',
-    marital_status: 'የጋብቻ ሁኔታ',
-    single: 'ያላገባ',
-    married: 'ያገባ',
+    birth_date: 'የትውልድ ቀን',
+    birth_city: 'የትውልድ ከተማ',
+    birth_country: 'የትውልድ ሀገር',
+    country_eligibility: 'ለዲቪ ፕሮግራም ብቁ የሆነ ሀገር',
     upload_photo: 'ፎቶ ይጫኑ',
-    next: 'ቀጣይ',
-    back_home: 'ወደ መነሻ ይመለሱ',
+    photo_requirements: 'ፎቶው ባለፉት 6 ወራት ውስጥ የተነሳ መሆን አለበት',
+
+    // Step 2 - Contact Information
+    contact_info_title: 'ክፍል 2፡ የእውቂያ መረጃ',
+    mailing_address: 'የፖስታ አድራሻ (አማራጭ)',
+    mailing_city: 'ከተማ',
+    mailing_state: 'ግዛት/ክልል',
+    mailing_postal: 'የፖስታ ኮድ',
+    mailing_country: 'ሀገር',
+    current_residence: 'የአሁኑ መኖሪያ ሀገር',
+    phone_number: 'ስልክ ቁጥር (አማራጭ)',
+    email_address: 'ኢሜል አድራሻ',
+
+    // Step 3 - Education & Work
+    education_work_title: 'ክፍል 3፡ ትምህርት እና የስራ ልምድ',
+    education_level: 'የትምህርት ደረጃ',
+    education_primary: 'የመጀመሪያ ደረጃ ብቻ',
+    education_high_school: 'ሁለተኛ ደረጃ፣ ዲግሪ የሌለው',
+    education_high_school_degree: 'ሁለተኛ ደረጃ ከዲግሪ ጋር',
+    education_vocational: 'የሙያ ትምህርት ቤት',
+    education_university: 'አንዳንድ የዩኒቨርስቲ ትምህርቶች',
+    education_university_degree: 'የዩኒቨርስቲ ዲግሪ',
+    education_graduate: 'አንዳንድ የድህረ ምረቃ ትምህርቶች',
+    education_graduate_degree: 'የድህረ ምረቃ ዲግሪ',
+    education_doctorate: 'የዶክትሬት ዲግሪ',
+    work_experience: 'የስራ ልምድ (ሁለተኛ ደረጃ ዲግሪ የሌለ ከሆነ)',
+    occupation: 'ሙያ',
+    employer: 'ቀጣሪ',
+
+    // Step 4 - Marital Status & Spouse
+    marital_status_title: 'ክፍል 4፡ የጋብቻ ሁኔታ',
+    marital_status: 'የጋብቻ ሁኔታ',
+    unmarried: 'ያላገባ/ች',
+    married: 'ያገባ/ች',
+    divorced: 'የፈታ/ች',
+    widowed: 'የሞተበት/በት',
+    legally_separated: 'በህግ የተለዩ',
+    spouse_info_title: 'የባል/ሚስት መረጃ',
+    spouse_required: 'ለስደት ቢያስቡም ባያስቡም ባለቤትዎን ማካተት አለብዎት',
+
+    // Step 5 - Children
+    children_title: 'ክፍል 5፡ የልጆች መረጃ',
+    number_children: 'የልጆች ቁጥር',
+    children_note: 'ከ21 ዓመት በታች ያላገቡ ልጆች ሁሉ ዝርዝር ያድርጉ። ሁሉንም ባዮሎጂካል ልጆች እና በህጋዊ መንገድ የተቀበሉ ልጆችን ያካትቱ። አሜሪካ ዜጋ ወይም ህጋዊ ቋሚ ነዋሪ የሆኑ ልጆችን አያካትቱ።',
+    child_info: 'ልጅ {number} መረጃ',
+    add_child: 'ልጅ ጨምር',
+    remove_child: 'ልጅ አስወግድ',
+
+    // Step 6 - Review
+    review_title: 'ማመልከቻዎን ይገምግሙ',
+    review_subtitle: 'ከማስገባትዎ በፊት ሁሉንም መረጃዎች በጥንቃቄ ይገምግሙ',
+
+    // Common
     required: 'ያስፈልጋል',
-    step_1_of_4: 'ደረጃ 1 ከ4'
+    optional: 'አማራጭ',
+    yes: 'አዎ',
+    no: 'አይ',
+
+    // Validation
+    validation_required: 'ይህ መስክ ያስፈልጋል',
+    validation_email: 'እባክዎ ትክክለኛ ኢሜል አድራሻ ያስገቡ',
+    validation_phone: 'እባክዎ ትክክለኛ ስልክ ቁጥር ያስገቡ',
+    validation_date: 'እባክዎ ትክክለኛ ቀን ያስገቡ',
+
+    // Countries
+    ethiopia: 'ኢትዮጵያ',
+    usa: 'አሜሪካ',
+
+    // Success
+    success_title: 'ማመልከቻ በተሳካ ሁኔታ ተልኳል!',
+    success_message: 'የዲቪ ሎተሪ ማመልከቻዎ ተልኳል። እባክዎ የማረጋገጫ ቁጥርዎን ለመዝገብዎ ያስቀምጡ።',
+    confirmation_number: 'የማረጋገጫ ቁጥር',
   },
+  
   ti: {
-    title: 'የዲቪ ሎተሪ ምዝገባ',
-    subtitle: 'የዲቪ ሎተሪ ምዝገባኻ ብደቓይቕ ውስት ዛዝም',
-    personal_info: 'ናይ ውልቀ-ሰብ ሓበሬታ',
-    first_name: 'ስም',
-    middle_name: 'ናይ አቦ ስም (ኣማራጺ)',
-    last_name: 'ናይ ኣያት ስም',
-    date_of_birth: 'ናይ ልደት ዕለት',
-    place_of_birth: 'ናይ ልደት ቦታ',
-    gender: 'ፆታ',
+    title: 'ዲቪ ሎተሪ ምዝገባ - DS-5501 ፎርም',
+    subtitle: 'ኤሌክትሮኒክ ዳይቨርሲቲ ቪዛ ምእታው ፎርም',
+
+    // Navigation
+    back_home: 'ናብ መበገሲ ተመለስ',
+    previous: 'ዝሓለፈ',
+    next: 'ቀጻሊ',
+    submit: 'ምዝገባ ሕብር',
+
+    // Steps
+    step_1: 'ውልቃዊ ሓበሬታ',
+    step_2: 'ርክብ ሓበሬታ',
+    step_3: 'ትምህርቲ ከምኡ ውን ስራሕ',
+    step_4: 'ሓበሬታ መጻምድቲ',
+    step_5: 'ሓበሬታ ውላድ',
+    step_6: 'ግምገማ ከምኡ ውን ሕብር',
+
+    // Step 1 - Personal Information
+    personal_info_title: 'ክፋል 1፡ ውልቃዊ ሓበሬታ',
+    last_name: 'ስም ቤተሰብ',
+    first_name: 'ቀዳማይ ስም',
+    middle_name: 'ማእከላይ ስም',
+    gender: 'ጾታ',
     male: 'ተባዕታይ',
     female: 'ኣንስተይቲ',
-    passport_number: 'ናይ ፓስፖርት ቁጽሪ',
-    passport_expiry: 'ናይ ፓስፖርት ዝውዳእ ዕለት',
-    phone: 'ናይ ተለፎን ቁጽሪ',
-    address: 'አድራሻ',
-    education: 'ናይ ትምህርቲ ደረጃ',
-    marital_status: 'ናይ ጋብቻ ኹነታት',
-    single: 'ዘይተመርዐወ',
-    married: 'ዝተመርዐወ',
-    upload_photo: 'ፎቶ ኣቐምጥ',
-    next: 'ቀጻሊ',
-    back_home: 'ናብ መበገሲ ተመለስ',
+    birth_date: 'ዕለት ልደት',
+    birth_city: 'ከተማ ልደት',
+    birth_country: 'ሃገር ልደት',
+    country_eligibility: 'ንዲቪ ፕሮግራም ብቁዕ ዝኾነ ሃገር',
+    upload_photo: 'ፎቶ ጽዕን',
+    photo_requirements: 'ፎቶ ኣብ ዝሓለፉ 6 ኣዋርሕ ውሽጢ ዝተወስደ ክኸውን ኣለዎ',
+
+    // Step 2 - Contact Information
+    contact_info_title: 'ክፋል 2፡ ሓበሬታ ርክብ',
+    mailing_address: 'ኣድራሻ ፖስታ (ኣማራጺ)',
+    mailing_city: 'ከተማ',
+    mailing_state: 'ግዛት/ክልል',
+    mailing_postal: 'ኮድ ፖስታ',
+    mailing_country: 'ሃገር',
+    current_residence: 'ሃገር ናይ ህሉው መንበሪ',
+    phone_number: 'ቁጽሪ ተሌፎን (ኣማራጺ)',
+    email_address: 'ኣድራሻ ኢሜይል',
+
+    // Step 3 - Education & Work
+    education_work_title: 'ክፋል 3፡ ትምህርቲ ከምኡ ውን ልምዲ ስራሕ',
+    education_level: 'ደረጃ ትምህርቲ',
+    education_primary: 'መባእታዊ ቤት ትምህርቲ ጥራይ',
+    education_high_school: 'ካልኣይ ደረጃ፡ ዲግሪ የብሉን',
+    education_high_school_degree: 'ካልኣይ ደረጃ ምስ ዲግሪ',
+    education_vocational: 'ናይ ሞያ ቤት ትምህርቲ',
+    education_university: 'ገለ ናይ ዩኒቨርስቲ ትምህርትታት',
+    education_university_degree: 'ናይ ዩኒቨርስቲ ዲግሪ',
+    education_graduate: 'ገለ ናይ ድሕረ ምረቓ ትምህርትታት',
+    education_graduate_degree: 'ናይ ድሕረ ምረቓ ዲግሪ',
+    education_doctorate: 'ናይ ዶክቶረት ዲግሪ',
+    work_experience: 'ልምዲ ስራሕ (ካልኣይ ደረጃ ዲግሪ እንተ ዘይብሉ)',
+    occupation: 'ሞያ',
+    employer: 'ኣስራሒ',
+
+    // Step 4 - Marital Status & Spouse
+    marital_status_title: 'ክፋል 4፡ ኩነታት ምርዓው',
+    marital_status: 'ኩነታት ምርዓው',
+    unmarried: 'ዘይተመርዓወ/ት',
+    married: 'ዝተመርዓወ/ት',
+    divorced: 'ዝተፈላለየ/ት',
+    widowed: 'መበለት/መበል',
+    legally_separated: 'ብሕጊ ዝተፈላለዩ',
+    spouse_info_title: 'ሓበሬታ መጻምድቲ',
+    spouse_required: 'ንስደት ከም ዝሓስቡ ወይ ከም ዘይሓስቡ መጻምድትኹም ከተካትቱ ኣለኩም',
+
+    // Step 5 - Children
+    children_title: 'ክፋል 5፡ ሓበሬታ ውላድ',
+    number_children: 'ቁጽሪ ውላድ',
+    children_note: 'ካብ 21 ዓመት ንታሕቲ ዝተመርዓዉ ዘይኮኑ ውላድ ኵሎም ርዘን ግበሩ። ኵሎም ባዮሎጂካል ውላድ ከምኡውን ብሕጋዊ መንገዲ ዝተቀበልኩም ውላድ ኣካትቱ። ዜጋ ኣሜሪካ ወይ ሕጋዊ ቀዋሚ ነባሪ ዝኾኑ ውላድ ኣይትኣቱ።',
+    child_info: 'ውላድ {number} ሓበሬታ',
+    add_child: 'ውላድ ወስኽ',
+    remove_child: 'ውላድ ኣውጽእ',
+
+    // Step 6 - Review
+    review_title: 'ምዝገባኹም ግምግሙ',
+    review_subtitle: 'ቅድሚ ምሕባር ኵሉ ሓበሬታ ብጥንቃቐ ግምግሙ',
+
+    // Common
     required: 'የድሊ',
-    step_1_of_4: 'ደረጃ 1 ካብ 4'
+    optional: 'ኣማራጺ',
+    yes: 'እወ',
+    no: 'አይ',
+
+    // Validation
+    validation_required: 'እዚ መስክ የድሊ',
+    validation_email: 'በጃኹም ሓቀኛ ኣድራሻ ኢሜይል ኣእትዉ',
+    validation_phone: 'በጃኹም ሓቀኛ ቁጽሪ ተሌፎን ኣእትዉ',
+    validation_date: 'በጃኹም ሓቀኛ ዕለት ኣእትዉ',
+
+    // Countries
+    ethiopia: 'ኢትዮጵያ',
+    usa: 'ኣሜሪካ',
+
+    // Success
+    success_title: 'ምዝገባ ብዓወት ተሰዲዱ!',
+    success_message: 'ናይ ዲቪ ሎተሪ ምዝገባኹም ተሰዲዱ። በጃኹም ናይ ምርግጋጽ ቁጽርኹም ንመዝገብኩም ሕዘዎ።',
+    confirmation_number: 'ቁጽሪ ምርግጋጽ',
   },
+  
   or: {
-    title: 'Iyyada DV Lottery',
-    subtitle: 'Iyyada DV lottery keessan daqiiqoota muraasa keessatti xumuraa',
-    personal_info: 'Odeeffannoo Dhuunfaa',
-    first_name: 'Maqaa',
-    middle_name: 'Maqaa Abbaa (Filannoo)',
-    last_name: 'Maqaa Akaakayyuu',
-    date_of_birth: 'Guyyaa Dhalootaa',
-    place_of_birth: 'Iddoo Dhalootaa',
+    title: 'Iyyannoo DV Lottery - Unka DS-5501',
+    subtitle: 'Unka Elektronikii Visa Diversity Galchuu',
+
+    // Navigation
+    back_home: 'Gara Jalqaba Deebiʼi',
+    previous: 'Duraanii',
+    next: 'Itti Fufi',
+    submit: 'Iyyannoo Ergii',
+
+    // Steps
+    step_1: 'Odeeffannoo Dhuunfaa',
+    step_2: 'Odeeffannoo Qunnamtii',
+    step_3: 'Barnoota fi Hojii',
+    step_4: 'Odeeffannoo Abbaa Warraatti',
+    step_5: 'Odeeffannoo Ijoollee',
+    step_6: 'Gamaaggamaa fi Ergii',
+
+    // Step 1 - Personal Information
+    personal_info_title: 'Kutaa 1፡ Odeeffannoo Dhuunfaa',
+    last_name: 'Maqaa Maatii',
+    first_name: 'Maqaa Jalqabaa',
+    middle_name: 'Maqaa Gidduu',
     gender: 'Saala',
     male: 'Dhiira',
     female: 'Dubartii',
-    passport_number: 'Lakkoofsa Paaspoortii',
-    passport_expiry: 'Guyyaa Paaspoortiin Dhufaa',
-    phone: 'Lakkoofsa Bilbilaa',
-    address: 'Teessoo',
-    education: 'Sadarkaa Barumsa',
-    marital_status: 'Haala Fuudhaa fi Heerumaa',
-    single: 'Kan Hin Fuune',
-    married: 'Kan Fuudhe',
-    upload_photo: 'Suuraa Olkaaʼi',
-    next: 'Itti Fufi',
-    back_home: 'Gara Jalqaba Deebiʼi',
+    birth_date: 'Guyyaa Dhaloota',
+    birth_city: 'Magaalaa Dhaloota',
+    birth_country: 'Biyya Dhaloota',
+    country_eligibility: 'Biyya Sagantaa DV\'f Malaa Ta\'e',
+    upload_photo: 'Suuraa Fe\'i',
+    photo_requirements: 'Suuraan ji\'oota 6 darban keessatti kan fudhatame ta\'uu qaba',
+
+    // Step 2 - Contact Information
+    contact_info_title: 'Kutaa 2፡ Odeeffannoo Qunnamtii',
+    mailing_address: 'Teessoo Poostaa (Filannoo)',
+    mailing_city: 'Magaalaa',
+    mailing_state: 'Naannoo/Bulchiinsa',
+    mailing_postal: 'Koodii Poostaa',
+    mailing_country: 'Biyya',
+    current_residence: 'Biyya Bakka Jireenyaa Ammaa',
+    phone_number: 'Lakkoofsa Bilbilaa (Filannoo)',
+    email_address: 'Teessoo Iimeelii',
+
+    // Step 3 - Education & Work
+    education_work_title: 'Kutaa 3፡ Barnoota fi Muuxannoo Hojii',
+    education_level: 'Sadarkaa Barnootaa',
+    education_primary: 'Barnoota Sadarkaa Jalqabaa Qofa',
+    education_high_school: 'Sadarkaa Lammaffaa, Digirii Hin Qabdu',
+    education_high_school_degree: 'Sadarkaa Lammaffaa Digirii Wajjin',
+    education_vocational: 'Mana Barnoota Ogummaa',
+    education_university: 'Barnootawwan Yuunivarsitii Tokko Tokko',
+    education_university_degree: 'Digirii Yuunivarsitii',
+    education_graduate: 'Barnootawwan Sadarkaa Guddaa Tokko Tokko',
+    education_graduate_degree: 'Digirii Sadarkaa Guddaa',
+    education_doctorate: 'Digirii Dokitaraa',
+    work_experience: 'Muuxannoo Hojii (digirii sadarkaa lammaffaa yoo hin qabaanne)',
+    occupation: 'Hojii',
+    employer: 'Hojjechiiftuun',
+
+    // Step 4 - Marital Status & Spouse
+    marital_status_title: 'Kutaa 4፡ Haala Gaa\'elaa',
+    marital_status: 'Haala Gaa\'elaa',
+    unmarried: 'Kan Hin Fuune/Heerumne',
+    married: 'Kan Fuudhe/Heerumte',
+    divorced: 'Kan Hiike',
+    widowed: 'Dhirsii/Niitiin Kan Du\'e',
+    legally_separated: 'Seeraan Kan Addaan Bahe',
+    spouse_info_title: 'Odeeffannoo Abbaa Warraa',
+    spouse_required: 'Godaanuuf yaadanii ykn hin yaadiin abbaa warraa keessan dabaluutu dirqama',
+
+    // Step 5 - Children
+    children_title: 'Kutaa 5፡ Odeeffannoo Ijoollee',
+    number_children: 'Lakkoofsa Ijoollee',
+    children_note: 'Ijoollee waggaa 21 gadi kanneen hin fuunee/heerumnee hunda tarreessaa. Ijoollee bayolojikaalii fi ijoollee seeraan fudhatan hunda dabalataa. Ijoollee lammii Ameerikaa ykn jiraatota hayyamaan jiraatan hin dabalatinaa.',
+    child_info: 'Odeeffannoo Ijoollee {number}',
+    add_child: 'Ijoollee Dabalaa',
+    remove_child: 'Ijoollee Balleessaa',
+
+    // Step 6 - Review
+    review_title: 'Iyyannoo Keessan Gamaaggamaa',
+    review_subtitle: 'Osoo hin ergin dura odeeffannoo hunda of eeggannoo guutuun gamaaggamaa',
+
+    // Common
     required: 'Barbaachisaa',
-    step_1_of_4: 'Tarkaanfii 1 4 keessaa'
+    optional: 'Filannoo',
+    yes: 'Eeyyee',
+    no: 'Lakki',
+
+    // Validation
+    validation_required: 'Dirreen kun barbaachisaadha',
+    validation_email: 'Maaloo teessoo iimeelii sirrii ta\'e galchaa',
+    validation_phone: 'Maaloo lakkoofsa bilbilaa sirrii ta\'e galchaa',
+    validation_date: 'Maaloo guyyaa sirrii ta\'e galchaa',
+
+    // Countries
+    ethiopia: 'Itoophiyaa',
+    usa: 'Ameerikaa',
+
+    // Success
+    success_title: 'Iyyannoon Milkaa\'inaan Ergameera!',
+    success_message: 'Iyyannoon DV Lottery keessan ergameera. Maaloo lakkoofsa mirkanaa\'inaa keessanii galmeef kuusaa.',
+    confirmation_number: 'Lakkoofsa Mirkanaa\'inaa',
   }
+};
+
+// Helper function to load saved form data
+const loadSavedFormData = (): FormData => {
+  if (typeof window === 'undefined') {
+    return getDefaultFormData();
+  }
+
+  try {
+    const savedData = localStorage.getItem('dv_form_draft');
+    if (savedData) {
+      return JSON.parse(savedData);
+    }
+  } catch (error) {
+    console.error('Failed to load saved form data:', error);
+  }
+
+  return getDefaultFormData();
+};
+
+const getDefaultFormData = (): FormData => ({
+  personalInfo: {
+    lastName: '',
+    firstName: '',
+    middleName: '',
+    gender: '',
+    birthDate: '',
+    birthCity: '',
+    birthCountry: 'Ethiopia',
+    countryOfEligibility: 'Ethiopia',
+    photo: null,
+  },
+  contactInfo: {
+    mailingAddress: '',
+    mailingCity: '',
+    mailingState: '',
+    mailingPostalCode: '',
+    mailingCountry: '',
+    countryOfResidence: 'Ethiopia',
+    phoneNumber: '',
+    emailAddress: '',
+  },
+  educationWork: {
+    educationLevel: '',
+    workExperience: '',
+    occupation: '',
+    employer: '',
+  },
+  maritalStatus: '',
+  spouseInfo: {
+    lastName: '',
+    firstName: '',
+    middleName: '',
+    gender: '',
+    birthDate: '',
+    birthCity: '',
+    birthCountry: 'Ethiopia',
+    photo: null,
+  },
+  numberOfChildren: 0,
+  children: [],
+});
+
+// Helper function to load saved step
+const loadSavedStep = (): number => {
+  if (typeof window === 'undefined') {
+    return 1;
+  }
+
+  try {
+    const savedStep = localStorage.getItem('dv_form_step');
+    if (savedStep) {
+      const step = parseInt(savedStep, 10);
+      return step > 0 ? step : 1;
+    }
+  } catch (error) {
+    console.error('Failed to load saved step:', error);
+  }
+
+  return 1;
 };
 
 export default function ApplyPage({ params }: ApplyPageProps) {
   const [locale, setLocale] = useState<string>('en');
-  const [formData, setFormData] = useState<FormData>({
-    firstName: '',
-    middleName: '',
-    lastName: '',
-    dateOfBirth: '',
-    placeOfBirth: '',
-    gender: '',
-    passportNumber: '',
-    passportExpiry: '',
-    phone: '',
-    address: '',
-    education: '',
-    maritalStatus: '',
-    photo: null,
-  });
+  const [currentStep, setCurrentStep] = useState(() => loadSavedStep());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Handle params resolution
+  const [formData, setFormData] = useState<FormData>(() => loadSavedFormData());
+
   useEffect(() => {
     params.then(({ locale: resolvedLocale }) => {
       setLocale(resolvedLocale);
     });
   }, [params]);
 
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('dv_form_draft', JSON.stringify(formData));
+    }
+  }, [formData]);
+
+  // Save current step to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('dv_form_step', currentStep.toString());
+    }
+  }, [currentStep]);
+
   const t = content[locale as keyof typeof content] || content.en;
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  // Calculate total steps based on form state
+  const getTotalSteps = () => {
+    let steps = 3; // Always have: Personal Info, Contact Info, Education
+
+    // Add photo upload step
+    steps += 1;
+
+    // Add marital status step (includes spouse if married)
+    steps += 1;
+
+    // Add children count step
+    steps += 1;
+
+    // Add children details step if there are children
+    if (formData.numberOfChildren > 0) {
+      steps += 1;
+    }
+
+    // Add review step
+    steps += 1;
+
+    return steps;
+  };
+  
+  const totalSteps = getTotalSteps();
+
+  const handleNext = () => {
+    if (currentStep < totalSteps) {
+      setCurrentStep(prev => prev + 1);
+    }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    setFormData(prev => ({
-      ...prev,
-      photo: file
-    }));
+  const handlePrevious = () => {
+    if (currentStep > 1) {
+      setCurrentStep(prev => prev - 1);
+    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      // Validate required fields
-      const requiredFields = ['firstName', 'lastName', 'dateOfBirth', 'placeOfBirth', 'gender', 'passportNumber', 'passportExpiry', 'phone', 'address', 'education', 'maritalStatus'];
-      
-      for (const field of requiredFields) {
-        if (!formData[field as keyof FormData]) {
-          alert(`Please fill in ${field}`);
-          setIsSubmitting(false);
-          return;
-        }
+  const updatePersonalInfo = (field: keyof PersonalInfo, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      personalInfo: {
+        ...prev.personalInfo,
+        [field]: value
       }
+    }));
+  };
 
-      if (!formData.photo) {
-        alert('Please upload a photo');
-        setIsSubmitting(false);
+  const updateContactInfo = (field: keyof ContactInfo, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      contactInfo: {
+        ...prev.contactInfo,
+        [field]: value
+      }
+    }));
+  };
+
+  const updateEducationWork = (field: keyof EducationWork, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      educationWork: {
+        ...prev.educationWork,
+        [field]: value
+      }
+    }));
+  };
+
+  const updateSpouseInfo = (field: keyof SpouseInfo, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      spouseInfo: {
+        ...prev.spouseInfo,
+        [field]: value
+      }
+    }));
+  };
+
+  const addChild = () => {
+    setFormData(prev => ({
+      ...prev,
+      children: [
+        ...prev.children,
+        {
+          lastName: '',
+          firstName: '',
+          middleName: '',
+          gender: '',
+          birthDate: '',
+          birthCity: '',
+          birthCountry: 'Ethiopia',
+          photo: null,
+        }
+      ]
+    }));
+  };
+
+  const updateChild = (index: number, field: keyof ChildInfo, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      children: prev.children.map((child, i) => 
+        i === index ? { ...child, [field]: value } : child
+      )
+    }));
+  };
+
+  const removeChild = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      children: prev.children.filter((_, i) => i !== index)
+    }));
+  };
+
+  const renderProgressBar = () => (
+    <div className="mb-8">
+      <div className="flex items-center justify-between">
+        {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
+          <div key={step} className="flex flex-col items-center">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+              step < currentStep 
+                ? 'bg-green-600 text-white'
+                : step === currentStep
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-300 text-gray-600'
+            }`}>
+              {step < currentStep ? <CheckIcon className="w-5 h-5" /> : step}
+            </div>
+            <span className="text-xs mt-1 text-center max-w-20">
+              {step === 1 && t.step_1}
+              {step === 2 && t.step_2}
+              {step === 3 && t.step_3}
+              {step === 4 && (t.upload_photo || 'Photo')}
+              {step === 5 && t.step_4}
+              {step === 6 && 'Children'}
+              {step === 7 && (formData.numberOfChildren > 0 ? 'Details' : t.step_6)}
+              {step === 8 && t.step_6}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 bg-gray-200 rounded-full h-2">
+        <div 
+          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+          style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+        ></div>
+      </div>
+    </div>
+  );
+
+  const renderPersonalInfoStep = () => (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+        {t.personal_info_title}
+      </h2>
+      
+      {/* Name Fields */}
+      <div className="grid md:grid-cols-3 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {t.last_name} <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={formData.personalInfo.lastName}
+            onChange={(e) => updatePersonalInfo('lastName', e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {t.first_name} <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={formData.personalInfo.firstName}
+            onChange={(e) => updatePersonalInfo('firstName', e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {t.middle_name}
+          </label>
+          <input
+            type="text"
+            value={formData.personalInfo.middleName}
+            onChange={(e) => updatePersonalInfo('middleName', e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          />
+        </div>
+      </div>
+
+      {/* Gender */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {t.gender} <span className="text-red-500">*</span>
+        </label>
+        <div className="flex space-x-4">
+          <label className="flex items-center">
+            <input
+              type="radio"
+              name="gender"
+              value="male"
+              checked={formData.personalInfo.gender === 'male'}
+              onChange={(e) => updatePersonalInfo('gender', e.target.value)}
+              className="mr-2"
+              required
+            />
+            {t.male}
+          </label>
+          <label className="flex items-center">
+            <input
+              type="radio"
+              name="gender"
+              value="female"
+              checked={formData.personalInfo.gender === 'female'}
+              onChange={(e) => updatePersonalInfo('gender', e.target.value)}
+              className="mr-2"
+              required
+            />
+            {t.female}
+          </label>
+        </div>
+      </div>
+
+      {/* Birth Information */}
+      <div className="grid md:grid-cols-3 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {t.birth_date} <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="date"
+            value={formData.personalInfo.birthDate}
+            onChange={(e) => updatePersonalInfo('birthDate', e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {t.birth_city} <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={formData.personalInfo.birthCity}
+            onChange={(e) => updatePersonalInfo('birthCity', e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            placeholder="Addis Ababa"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {t.birth_country} <span className="text-red-500">*</span>
+          </label>
+          <select
+            value={formData.personalInfo.birthCountry}
+            onChange={(e) => updatePersonalInfo('birthCountry', e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            required
+          >
+            <option value="Ethiopia">Ethiopia</option>
+            {/* Add more countries as needed */}
+          </select>
+        </div>
+      </div>
+
+      {/* Country of Eligibility */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {t.country_eligibility} <span className="text-red-500">*</span>
+        </label>
+        <select
+          value={formData.personalInfo.countryOfEligibility}
+          onChange={(e) => updatePersonalInfo('countryOfEligibility', e.target.value)}
+          className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          required
+        >
+          <option value="Ethiopia">Ethiopia</option>
+          {/* Add more countries as needed */}
+        </select>
+      </div>
+    </div>
+  );
+
+  const renderContactInfoStep = () => (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+        {t.contact_info_title}
+      </h2>
+
+      {/* Mailing Address */}
+      <div className="bg-gray-50 p-4 rounded-lg">
+        <h3 className="font-medium text-gray-900 mb-4">
+          {t.mailing_address} <span className="text-sm text-gray-600">({t.optional})</span>
+        </h3>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t.mailing_address}
+            </label>
+            <input
+              type="text"
+              value={formData.contactInfo.mailingAddress}
+              onChange={(e) => updateContactInfo('mailingAddress', e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t.mailing_city}
+            </label>
+            <input
+              type="text"
+              value={formData.contactInfo.mailingCity}
+              onChange={(e) => updateContactInfo('mailingCity', e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t.mailing_state}
+            </label>
+            <input
+              type="text"
+              value={formData.contactInfo.mailingState}
+              onChange={(e) => updateContactInfo('mailingState', e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t.mailing_postal}
+            </label>
+            <input
+              type="text"
+              value={formData.contactInfo.mailingPostalCode}
+              onChange={(e) => updateContactInfo('mailingPostalCode', e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t.mailing_country}
+            </label>
+            <select
+              value={formData.contactInfo.mailingCountry}
+              onChange={(e) => updateContactInfo('mailingCountry', e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            >
+              <option value="">Select Country</option>
+              <option value="Ethiopia">Ethiopia</option>
+              <option value="United States">United States</option>
+              {/* Add more countries */}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Current Residence */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {t.current_residence} <span className="text-red-500">*</span>
+        </label>
+        <select
+          value={formData.contactInfo.countryOfResidence}
+          onChange={(e) => updateContactInfo('countryOfResidence', e.target.value)}
+          className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          required
+        >
+          <option value="Ethiopia">Ethiopia</option>
+          {/* Add more countries */}
+        </select>
+      </div>
+
+      {/* Contact Details */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {t.phone_number} <span className="text-sm text-gray-600">({t.optional})</span>
+          </label>
+          <input
+            type="tel"
+            value={formData.contactInfo.phoneNumber}
+            onChange={(e) => updateContactInfo('phoneNumber', e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            placeholder="+251912345678"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {t.email_address} <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="email"
+            value={formData.contactInfo.emailAddress}
+            onChange={(e) => updateContactInfo('emailAddress', e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            required
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderEducationWorkStep = () => (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+        {t.education_work_title}
+      </h2>
+
+      {/* Education Level */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {t.education_level} <span className="text-red-500">*</span>
+        </label>
+        <select
+          value={formData.educationWork.educationLevel}
+          onChange={(e) => updateEducationWork('educationLevel', e.target.value)}
+          className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          required
+        >
+          <option value="">Select Education Level</option>
+          <option value="primary">{t.education_primary}</option>
+          <option value="high_school_no_degree">{t.education_high_school}</option>
+          <option value="high_school_degree">{t.education_high_school_degree}</option>
+          <option value="vocational">{t.education_vocational}</option>
+          <option value="university_courses">{t.education_university}</option>
+          <option value="university_degree">{t.education_university_degree}</option>
+          <option value="graduate_courses">{t.education_graduate}</option>
+          <option value="graduate_degree">{t.education_graduate_degree}</option>
+          <option value="doctorate">{t.education_doctorate}</option>
+        </select>
+      </div>
+
+      {/* Work Experience (conditional) */}
+      {(formData.educationWork.educationLevel === 'primary' || 
+        formData.educationWork.educationLevel === 'high_school_no_degree') && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <h3 className="font-medium text-yellow-800 mb-4">
+            {t.work_experience}
+          </h3>
+          <p className="text-sm text-yellow-700 mb-4">
+            You must have at least 2 years of work experience in an occupation that requires at least 2 years of training or experience.
+          </p>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t.occupation} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.educationWork.occupation}
+                onChange={(e) => updateEducationWork('occupation', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t.employer}
+              </label>
+              <input
+                type="text"
+                value={formData.educationWork.employer}
+                onChange={(e) => updateEducationWork('employer', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderPhotoUploadStep = () => (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+        {t.upload_photo || 'Upload Photo'}
+      </h2>
+
+      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-yellow-800">
+              Important Photo Requirements
+            </h3>
+            <div className="mt-2 text-sm text-yellow-700">
+              <p>{t.photo_requirements || 'Photo must be taken within the last 6 months'}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Photo Upload */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Your Photo <span className="text-red-500">*</span>
+        </label>
+        <PhotoUploadWithCrop
+          formId="primary-applicant"
+          personType="primary"
+          required
+          currentPhoto={
+            formData.personalInfo.photo && typeof formData.personalInfo.photo === 'object'
+              ? formData.personalInfo.photo.url
+              : undefined
+          }
+          onUploadSuccess={(result) => {
+            updatePersonalInfo('photo', result);
+          }}
+          onUploadError={(error) => {
+            console.error('Photo upload error:', error);
+            alert('Photo upload failed: ' + error);
+          }}
+        />
+      </div>
+
+      <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+        <h4 className="font-medium text-blue-900 mb-2">📋 Photo Guidelines:</h4>
+        <ul className="text-sm text-blue-800 space-y-1">
+          <li>• Recent photo (within 6 months)</li>
+          <li>• White or off-white background</li>
+          <li>• JPEG format, will be cropped to 600×600 pixels</li>
+          <li>• Face clearly visible, looking directly at camera</li>
+          <li>• No glasses, hats, or head coverings (except for religious purposes)</li>
+        </ul>
+      </div>
+    </div>
+  );
+
+  const renderMaritalStatusStep = () => (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+        {t.marital_status_title}
+      </h2>
+
+      {/* Marital Status */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-4">
+          {t.marital_status} <span className="text-red-500">*</span>
+        </label>
+        <div className="grid md:grid-cols-3 gap-4">
+          {['unmarried', 'married', 'divorced', 'widowed', 'legally_separated'].map((status) => (
+            <label key={status} className="flex items-center p-4 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
+              <input
+                type="radio"
+                name="maritalStatus"
+                value={status}
+                checked={formData.maritalStatus === status}
+                onChange={(e) => setFormData(prev => ({ ...prev, maritalStatus: e.target.value }))}
+                className="mr-3"
+                required
+              />
+              {t[status as keyof typeof t] || status}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Spouse Information */}
+      {formData.maritalStatus === 'married' && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <h3 className="text-lg font-medium text-blue-900 mb-4">
+            {t.spouse_info_title}
+          </h3>
+          <p className="text-sm text-blue-700 mb-6">
+            {t.spouse_required}
+          </p>
+          
+          {/* Spouse Name Fields */}
+          <div className="grid md:grid-cols-3 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t.last_name} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.spouseInfo.lastName}
+                onChange={(e) => updateSpouseInfo('lastName', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t.first_name} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.spouseInfo.firstName}
+                onChange={(e) => updateSpouseInfo('firstName', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t.middle_name}
+              </label>
+              <input
+                type="text"
+                value={formData.spouseInfo.middleName}
+                onChange={(e) => updateSpouseInfo('middleName', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Spouse Gender and Birth Info */}
+          <div className="grid md:grid-cols-4 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t.gender} <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={formData.spouseInfo.gender}
+                onChange={(e) => updateSpouseInfo('gender', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                required
+              >
+                <option value="">Select</option>
+                <option value="male">{t.male}</option>
+                <option value="female">{t.female}</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t.birth_date} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="date"
+                value={formData.spouseInfo.birthDate}
+                onChange={(e) => updateSpouseInfo('birthDate', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t.birth_city} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.spouseInfo.birthCity}
+                onChange={(e) => updateSpouseInfo('birthCity', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t.birth_country} <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={formData.spouseInfo.birthCountry}
+                onChange={(e) => updateSpouseInfo('birthCountry', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                required
+              >
+                <option value="Ethiopia">Ethiopia</option>
+                {/* Add more countries */}
+              </select>
+            </div>
+          </div>
+
+          {/* Spouse Photo */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t.upload_photo} <span className="text-red-500">*</span>
+            </label>
+            <PhotoUploadWithCrop
+              formId="spouse"
+              personType="spouse"
+              required
+              currentPhoto={
+                formData.spouseInfo.photo && typeof formData.spouseInfo.photo === 'object'
+                  ? formData.spouseInfo.photo.url
+                  : undefined
+              }
+              onUploadSuccess={(result) => {
+                updateSpouseInfo('photo', result);
+              }}
+              onUploadError={(error) => {
+                console.error('Spouse photo upload error:', error);
+                alert('Spouse photo upload failed: ' + error);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Number of Children */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {t.number_children} <span className="text-red-500">*</span>
+        </label>
+        <p className="text-sm text-gray-600 mb-4">
+          {t.children_note}
+        </p>
+        <select
+          value={formData.numberOfChildren}
+          onChange={(e) => {
+            const num = parseInt(e.target.value);
+            setFormData(prev => ({
+              ...prev,
+              numberOfChildren: num,
+              children: num === 0 ? [] : Array.from({ length: num }, (_, i) => 
+                prev.children[i] || {
+                  lastName: '',
+                  firstName: '',
+                  middleName: '',
+                  gender: '',
+                  birthDate: '',
+                  birthCity: '',
+                  birthCountry: 'Ethiopia',
+                  photo: null,
+                }
+              )
+            }));
+          }}
+          className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          required
+        >
+          {Array.from({ length: 11 }, (_, i) => (
+            <option key={i} value={i}>{i}</option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+
+  const renderChildrenCountStep = () => (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+        Children Information
+      </h2>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-4">
+          How many children will accompany you to the United States? <span className="text-red-500">*</span>
+        </label>
+        <select
+          value={formData.numberOfChildren}
+          onChange={(e) => {
+            const count = parseInt(e.target.value);
+            setFormData(prev => ({
+              ...prev,
+              numberOfChildren: count,
+              children: count > 0 ? Array.from({ length: count }, (_, i) => prev.children[i] || {
+                lastName: '',
+                firstName: '',
+                middleName: '',
+                gender: '',
+                birthDate: '',
+                birthCity: '',
+                birthCountry: 'Ethiopia',
+                photo: null,
+              }) : []
+            }));
+          }}
+          className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          required
+        >
+          <option value="">Select number of children</option>
+          {Array.from({ length: 11 }, (_, i) => (
+            <option key={i} value={i}>{i}</option>
+          ))}
+        </select>
+        {formData.numberOfChildren > 0 && (
+          <p className="text-sm text-blue-600 mt-2">
+            You will provide details for {formData.numberOfChildren} child{formData.numberOfChildren > 1 ? 'ren' : ''} in the next step.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderChildrenStep = () => (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+        {t.children_title}
+      </h2>
+
+      {formData.children.map((child, index) => (
+        <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            {t.child_info.replace('{number}', (index + 1).toString())}
+          </h3>
+          
+          {/* Child Name Fields */}
+          <div className="grid md:grid-cols-3 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t.last_name} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={child.lastName}
+                onChange={(e) => updateChild(index, 'lastName', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t.first_name} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={child.firstName}
+                onChange={(e) => updateChild(index, 'firstName', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t.middle_name}
+              </label>
+              <input
+                type="text"
+                value={child.middleName}
+                onChange={(e) => updateChild(index, 'middleName', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Child Gender and Birth Info */}
+          <div className="grid md:grid-cols-4 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t.gender} <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={child.gender}
+                onChange={(e) => updateChild(index, 'gender', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                required
+              >
+                <option value="">Select</option>
+                <option value="male">{t.male}</option>
+                <option value="female">{t.female}</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t.birth_date} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="date"
+                value={child.birthDate}
+                onChange={(e) => updateChild(index, 'birthDate', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t.birth_city} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={child.birthCity}
+                onChange={(e) => updateChild(index, 'birthCity', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t.birth_country} <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={child.birthCountry}
+                onChange={(e) => updateChild(index, 'birthCountry', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                required
+              >
+                <option value="Ethiopia">Ethiopia</option>
+                {/* Add more countries */}
+              </select>
+            </div>
+          </div>
+
+          {/* Child Photo */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t.upload_photo} <span className="text-red-500">*</span>
+            </label>
+            <PhotoUploadWithCrop
+              formId={`child-${index}`}
+              personType="child"
+              required
+              currentPhoto={
+                child.photo && typeof child.photo === 'object'
+                  ? child.photo.url
+                  : undefined
+              }
+              onUploadSuccess={(result) => {
+                updateChild(index, 'photo', result);
+              }}
+              onUploadError={(error) => {
+                console.error(`Child ${index + 1} photo upload error:`, error);
+                alert(`Child ${index + 1} photo upload failed: ` + error);
+              }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const renderReviewStep = () => (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+        {t.review_title}
+      </h2>
+      <p className="text-gray-600 mb-8">{t.review_subtitle}</p>
+
+      {/* Review sections would go here - showing form data for final review */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h3 className="text-lg font-medium mb-4">Personal Information</h3>
+        <div className="space-y-2 text-sm">
+          <p><strong>Name:</strong> {formData.personalInfo.firstName} {formData.personalInfo.middleName} {formData.personalInfo.lastName}</p>
+          <p><strong>Gender:</strong> {formData.personalInfo.gender}</p>
+          <p><strong>Birth Date:</strong> {formData.personalInfo.birthDate}</p>
+          <p><strong>Birth Place:</strong> {formData.personalInfo.birthCity}, {formData.personalInfo.birthCountry}</p>
+        </div>
+      </div>
+
+      {/* Add more review sections */}
+    </div>
+  );
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    
+    try {
+      const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+      if (!token) {
+        alert('Please log in first to submit an application.');
+        window.location.href = `/${locale}/register`;
         return;
       }
 
-      // Here you would normally send the data to your API
-      console.log('Form data:', formData);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For now, just show success message
-      alert('Form submitted successfully! This is step 1 of 4.');
-      
-      // In a real app, you would navigate to the next step
-      // router.push(`/${locale}/apply/step2`);
+      // Prepare comprehensive form data
+      const submissionData = {
+        applicant_data: {
+          first_name: formData.personalInfo.firstName,
+          middle_name: formData.personalInfo.middleName,
+          last_name: formData.personalInfo.lastName,
+          gender: formData.personalInfo.gender,
+          date_of_birth: formData.personalInfo.birthDate,
+          place_of_birth: formData.personalInfo.birthCity,
+          country_of_birth: formData.personalInfo.birthCountry,
+          country_of_eligibility: formData.personalInfo.countryOfEligibility,
+          email: formData.contactInfo.emailAddress,
+          phone: formData.contactInfo.phoneNumber,
+          address: formData.contactInfo.mailingAddress,
+          city: formData.contactInfo.mailingCity,
+          state: formData.contactInfo.mailingState,
+          postal_code: formData.contactInfo.mailingPostalCode,
+          country_of_residence: formData.contactInfo.countryOfResidence,
+          education_level: formData.educationWork.educationLevel,
+          occupation: formData.educationWork.occupation,
+          employer: formData.educationWork.employer,
+          marital_status: formData.maritalStatus,
+        },
+        spouse_data: formData.maritalStatus === 'married' ? {
+          first_name: formData.spouseInfo.firstName,
+          middle_name: formData.spouseInfo.middleName,
+          last_name: formData.spouseInfo.lastName,
+          gender: formData.spouseInfo.gender,
+          date_of_birth: formData.spouseInfo.birthDate,
+          place_of_birth: formData.spouseInfo.birthCity,
+          country_of_birth: formData.spouseInfo.birthCountry,
+        } : null,
+        children_data: formData.children.map(child => ({
+          first_name: child.firstName,
+          middle_name: child.middleName,
+          last_name: child.lastName,
+          gender: child.gender,
+          date_of_birth: child.birthDate,
+          place_of_birth: child.birthCity,
+          country_of_birth: child.birthCountry,
+        })),
+        photos: [
+          formData.personalInfo.photo?.url,
+          ...(formData.maritalStatus === 'married' ? [formData.spouseInfo.photo?.url] : []),
+          ...formData.children.map(child => child.photo?.url)
+        ].filter(Boolean)
+      };
+
+      const response = await fetch('/api/user/submit-form', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(submissionData)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Form submission failed');
+      }
+
+      if (result.success) {
+        alert(`${t.success_title}\n${t.confirmation_number}: ${result.form_id}`);
+        window.location.href = `/${locale}/dashboard`;
+      } else {
+        throw new Error(result.error || 'Unknown error occurred');
+      }
       
     } catch (error) {
       console.error('Error submitting form:', error);
-      alert('Error submitting form. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Error submitting form. Please try again.';
+      alert(errorMessage);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const renderCurrentStep = () => {
+    switch (currentStep) {
+      case 1:
+        return renderPersonalInfoStep();
+      case 2:
+        return renderContactInfoStep();
+      case 3:
+        return renderEducationWorkStep();
+      case 4:
+        return renderPhotoUploadStep();
+      case 5:
+        return renderMaritalStatusStep();
+      case 6:
+        return renderChildrenCountStep();
+      case 7:
+        if (formData.numberOfChildren > 0) {
+          return renderChildrenStep();
+        } else {
+          return renderReviewStep();
+        }
+      case 8:
+        return renderReviewStep();
+      default:
+        return renderPersonalInfoStep();
     }
   };
 
@@ -222,288 +1668,53 @@ export default function ApplyPage({ params }: ApplyPageProps) {
         {/* Header */}
         <div className="text-center mb-8">
           <Link href={`/${locale}`} className="text-blue-600 hover:text-blue-700 mb-4 inline-block">
-            ← {t.back_home}
+            <ChevronLeftIcon className="w-5 h-5 inline mr-1" />
+            {t.back_home}
           </Link>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
             {t.title}
           </h1>
-          <p className="text-xl text-gray-600 mb-6">
+          <p className="text-lg text-gray-600 mb-6">
             {t.subtitle}
           </p>
-          <div className="text-sm text-gray-500">
-            {t.step_1_of_4}
-          </div>
         </div>
 
         {/* Progress Bar */}
-        <div className="w-full bg-gray-200 rounded-full h-2 mb-8">
-          <div className="bg-blue-600 h-2 rounded-full w-1/4"></div>
-        </div>
+        {renderProgressBar()}
 
         {/* Form */}
         <div className="bg-white rounded-lg shadow-md p-6 md:p-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6">
-            {t.personal_info}
-          </h2>
-          
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name Fields */}
-            <div className="grid md:grid-cols-3 gap-4">
-              <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
-                  {t.first_name} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="firstName"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 min-h-[44px]"
-                />
-              </div>
-              <div>
-                <label htmlFor="middleName" className="block text-sm font-medium text-gray-700 mb-2">
-                  {t.middle_name}
-                </label>
-                <input
-                  type="text"
-                  id="middleName"
-                  name="middleName"
-                  value={formData.middleName}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 min-h-[44px]"
-                />
-              </div>
-              <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
-                  {t.last_name} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="lastName"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 min-h-[44px]"
-                />
-              </div>
-            </div>
+          {renderCurrentStep()}
 
-            {/* Date of Birth and Place of Birth */}
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-2">
-                  {t.date_of_birth} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  id="dateOfBirth"
-                  name="dateOfBirth"
-                  value={formData.dateOfBirth}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 min-h-[44px]"
-                />
-              </div>
-              <div>
-                <label htmlFor="placeOfBirth" className="block text-sm font-medium text-gray-700 mb-2">
-                  {t.place_of_birth} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="placeOfBirth"
-                  name="placeOfBirth"
-                  value={formData.placeOfBirth}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="Addis Ababa, Ethiopia"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 min-h-[44px]"
-                />
-              </div>
-            </div>
+          {/* Navigation Buttons */}
+          <div className="flex justify-between items-center pt-8 mt-8 border-t border-gray-200">
+            <button
+              onClick={handlePrevious}
+              disabled={currentStep === 1}
+              className="flex items-center px-6 py-3 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeftIcon className="w-5 h-5 mr-2" />
+              {t.previous}
+            </button>
 
-            {/* Gender */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t.gender} <span className="text-red-500">*</span>
-              </label>
-              <div className="flex space-x-4">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="gender"
-                    value="male"
-                    checked={formData.gender === 'male'}
-                    onChange={handleInputChange}
-                    className="mr-2"
-                    required
-                  />
-                  {t.male}
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="gender"
-                    value="female"
-                    checked={formData.gender === 'female'}
-                    onChange={handleInputChange}
-                    className="mr-2"
-                    required
-                  />
-                  {t.female}
-                </label>
-              </div>
-            </div>
-
-            {/* Passport Information */}
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="passportNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                  {t.passport_number} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="passportNumber"
-                  name="passportNumber"
-                  value={formData.passportNumber}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 min-h-[44px]"
-                />
-              </div>
-              <div>
-                <label htmlFor="passportExpiry" className="block text-sm font-medium text-gray-700 mb-2">
-                  {t.passport_expiry} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  id="passportExpiry"
-                  name="passportExpiry"
-                  value={formData.passportExpiry}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 min-h-[44px]"
-                />
-              </div>
-            </div>
-
-            {/* Contact Information */}
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                  {t.phone} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="+251912345678"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 min-h-[44px]"
-                />
-              </div>
-              <div>
-                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
-                  {t.address} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 min-h-[44px]"
-                />
-              </div>
-            </div>
-
-            {/* Education and Marital Status */}
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="education" className="block text-sm font-medium text-gray-700 mb-2">
-                  {t.education} <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="education"
-                  name="education"
-                  value={formData.education}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 min-h-[44px]"
-                >
-                  <option value="">Select education level</option>
-                  <option value="high_school">High School</option>
-                  <option value="bachelor">Bachelor's Degree</option>
-                  <option value="master">Master's Degree</option>
-                  <option value="phd">PhD</option>
-                </select>
-              </div>
-              <div>
-                <label htmlFor="maritalStatus" className="block text-sm font-medium text-gray-700 mb-2">
-                  {t.marital_status} <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="maritalStatus"
-                  name="maritalStatus"
-                  value={formData.maritalStatus}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 min-h-[44px]"
-                >
-                  <option value="">{t.marital_status}</option>
-                  <option value="single">{t.single}</option>
-                  <option value="married">{t.married}</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Photo Upload */}
-            <div>
-              <label htmlFor="photo" className="block text-sm font-medium text-gray-700 mb-2">
-                {t.upload_photo} <span className="text-red-500">*</span>
-              </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                <input
-                  type="file"
-                  id="photo"
-                  name="photo"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  required
-                  className="hidden"
-                />
-                <label
-                  htmlFor="photo"
-                  className="cursor-pointer flex flex-col items-center"
-                >
-                  <div className="text-4xl mb-2">📷</div>
-                  <span className="text-gray-600">
-                    {formData.photo ? formData.photo.name : t.upload_photo}
-                  </span>
-                  <span className="text-sm text-gray-500 mt-1">
-                    {formData.photo ? 'Photo selected' : 'JPG, PNG (Max 2MB)'}
-                  </span>
-                </label>
-              </div>
-            </div>
-
-            {/* Next Button */}
-            <div className="flex justify-end pt-6">
+            {currentStep === totalSteps ? (
               <button
-                type="submit"
+                onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white px-8 py-3 rounded-md font-medium transition-colors text-lg min-h-[44px]"
+                className="flex items-center px-8 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-md font-medium transition-colors"
               >
-                {isSubmitting ? 'Processing...' : `${t.next} →`}
+                {isSubmitting ? 'Processing...' : t.submit}
               </button>
-            </div>
-          </form>
+            ) : (
+              <button
+                onClick={handleNext}
+                className="flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors"
+              >
+                {t.next}
+                <ChevronRightIcon className="w-5 h-5 ml-2" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

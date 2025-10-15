@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
+import { withDBConnection } from '@/middleware/dbConnection';
 import User from '@/models/User';
 import { requireAuth } from '@/middleware/auth';
 import { z } from 'zod';
@@ -14,8 +14,7 @@ const profileUpdateSchema = z.object({
 
 async function updateUserProfileHandler(request: NextRequest) {
   try {
-    await connectDB();
-    
+
     const userId = (request as any).user.userId;
     const body = await request.json();
     const validatedData = profileUpdateSchema.parse(body);
@@ -94,4 +93,4 @@ async function updateUserProfileHandler(request: NextRequest) {
   }
 }
 
-export const PUT = requireAuth(updateUserProfileHandler);
+export const PUT = withDBConnection(requireAuth(updateUserProfileHandler));

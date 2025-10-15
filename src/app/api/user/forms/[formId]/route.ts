@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
+import { withDBConnection } from '@/middleware/dbConnection';
 import Form from '@/models/Form';
 import { requireAuth } from '@/middleware/auth';
 
@@ -8,8 +8,7 @@ async function getFormDetailsHandler(
   { params }: { params: { formId: string } }
 ) {
   try {
-    await connectDB();
-    
+
     const userId = (request as any).user.userId;
     const { formId } = params;
 
@@ -64,8 +63,7 @@ async function updateFormHandler(
   { params }: { params: { formId: string } }
 ) {
   try {
-    await connectDB();
-    
+
     const userId = (request as any).user.userId;
     const { formId } = params;
     const body = await request.json();
@@ -130,5 +128,5 @@ async function updateFormHandler(
   }
 }
 
-export const GET = requireAuth(getFormDetailsHandler);
-export const PUT = requireAuth(updateFormHandler);
+export const GET = withDBConnection(requireAuth(getFormDetailsHandler));
+export const PUT = withDBConnection(requireAuth(updateFormHandler));

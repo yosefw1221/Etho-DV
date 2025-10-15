@@ -260,11 +260,11 @@ const FormHistory: React.FC<FormHistoryProps> = ({ forms, onFormAction, locale }
                           {form.applicant_name}
                         </div>
                         <div className="text-sm text-gray-500">
-                          Submitted: {formatDate(form.submission_date)}
+                          Submitted: {formatDate(new Date(form.submission_date))}
                         </div>
                         {form.estimated_completion && (
                           <div className="text-sm text-blue-600">
-                            Est. completion: {formatDate(form.estimated_completion)}
+                            Est. completion: {formatDate(new Date(form.estimated_completion))}
                           </div>
                         )}
                       </div>

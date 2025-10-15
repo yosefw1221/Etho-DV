@@ -92,8 +92,8 @@ const PersonalInfoStep: React.FC<PersonalInfoStepProps> = ({
           onChange={(e) => handleInputChange('date_of_birth', e.target.value)}
           error={errors.date_of_birth}
           required
-          showHelpIcon
-          onHelpClick={() => setHelpModal('date_of_birth')}
+          infoContent="Enter your date of birth as shown on your passport or birth certificate"
+          infoTitle="Date of Birth Help"
         />
 
         <Select
@@ -113,8 +113,8 @@ const PersonalInfoStep: React.FC<PersonalInfoStepProps> = ({
         error={errors.place_of_birth}
         required
         placeholder="Enter city and country (e.g., Addis Ababa, Ethiopia)"
-        showHelpIcon
-        onHelpClick={() => setHelpModal('place_of_birth')}
+        infoContent="Enter the city and country where you were born"
+        infoTitle="Place of Birth Help"
       />
 
       <Select

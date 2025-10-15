@@ -299,7 +299,10 @@ const PaymentStatusAnimation: React.FC<PaymentStatusAnimationProps> = ({
           <Button variant="outline" onClick={onRetry} size="lg">
             Try Again
           </Button>
-          <Button href="mailto:support@etho-dv.com" size="lg">
+          <Button 
+            size="lg" 
+            onClick={() => window.open('mailto:support@etho-dv.com', '_blank')}
+          >
             Contact Support
           </Button>
         </div>
@@ -309,7 +312,11 @@ const PaymentStatusAnimation: React.FC<PaymentStatusAnimationProps> = ({
     if (status === 'pending') {
       return (
         <div className="flex justify-center mt-8">
-          <Button href="/" variant="outline" size="lg">
+          <Button 
+            variant="outline" 
+            size="lg"
+            onClick={() => window.location.href = '/'}
+          >
             Return to Home
           </Button>
         </div>

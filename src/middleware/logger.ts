@@ -27,10 +27,12 @@ export class Logger {
 
   public log(logData: RequestLog) {
     this.logs.push(logData);
-    
+
     // In production, you'd send this to a proper logging service
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[${logData.timestamp}] ${logData.method} ${logData.url} - ${logData.statusCode} - ${logData.duration}ms`);
+      console.log(
+        `[${logData.timestamp}] ${logData.method} ${logData.url} - ${logData.statusCode} - ${logData.duration}ms`
+      );
     }
 
     // Keep only last 1000 logs in memory
@@ -45,7 +47,7 @@ export class Logger {
 
   public getErrorLogs(limit: number = 50): RequestLog[] {
     return this.logs
-      .filter(log => log.error || (log.statusCode && log.statusCode >= 400))
+      .filter((log) => log.error || (log.statusCode && log.statusCode >= 400))
       .slice(-limit);
   }
 }
@@ -56,32 +58,35 @@ export function withRequestLogging(
   return async (request: NextRequest, ...args: any[]) => {
     const startTime = Date.now();
     const logger = Logger.getInstance();
-    
+
     const logData: RequestLog = {
       method: request.method,
       url: new URL(request.url).pathname,
       userAgent: request.headers.get('user-agent') || undefined,
-      ip: request.ip || request.headers.get('x-forwarded-for') || undefined,
+      ip:
+        request.headers.get('x-forwarded-for') ||
+        request.headers.get('x-real-ip') ||
+        undefined,
       userId: (request as any).user?.userId,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     try {
       const response = await handler(request, ...args);
-      
+
       logData.duration = Date.now() - startTime;
       logData.statusCode = response.status;
-      
+
       logger.log(logData);
-      
+
       return response;
     } catch (error) {
       logData.duration = Date.now() - startTime;
       logData.error = error instanceof Error ? error.message : 'Unknown error';
       logData.statusCode = 500;
-      
+
       logger.log(logData);
-      
+
       throw error;
     }
   };
@@ -102,7 +107,7 @@ export function auditLog(
     userId,
     metadata,
     timestamp: new Date().toISOString(),
-    ip: 'unknown' // Would be extracted from request context in real implementation
+    ip: 'unknown', // Would be extracted from request context in real implementation
   };
 
   // In production, this would go to a secure audit log
@@ -114,23 +119,27 @@ export function withAuditLogging(
   resourceType: string,
   getResourceId?: (request: NextRequest, ...args: any[]) => string
 ) {
-  return function(handler: (request: NextRequest, ...args: any[]) => Promise<NextResponse>) {
+  return function (
+    handler: (request: NextRequest, ...args: any[]) => Promise<NextResponse>
+  ) {
     return async (request: NextRequest, ...args: any[]) => {
       const userId = (request as any).user?.userId;
-      const resourceId = getResourceId ? getResourceId(request, ...args) : undefined;
-      
+      const resourceId = getResourceId
+        ? getResourceId(request, ...args)
+        : undefined;
+
       try {
         const response = await handler(request, ...args);
-        
+
         // Log successful operations
         if (response.status < 400) {
           auditLog(action, resourceType, resourceId, userId, {
             method: request.method,
             url: new URL(request.url).pathname,
-            success: true
+            success: true,
           });
         }
-        
+
         return response;
       } catch (error) {
         // Log failed operations
@@ -138,9 +147,9 @@ export function withAuditLogging(
           method: request.method,
           url: new URL(request.url).pathname,
           success: false,
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
-        
+
         throw error;
       }
     };

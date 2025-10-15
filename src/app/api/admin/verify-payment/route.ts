@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
+import { withDBConnection } from '@/middleware/dbConnection';
 import Payment from '@/models/Payment';
 import Form from '@/models/Form';
 import { requireRole } from '@/middleware/auth';
@@ -14,8 +14,7 @@ const verifyPaymentSchema = z.object({
 
 async function verifyPaymentHandler(request: NextRequest) {
   try {
-    await connectDB();
-    
+
     const adminId = (request as any).user.userId;
     const body = await request.json();
     const validatedData = verifyPaymentSchema.parse(body);
@@ -119,4 +118,4 @@ function generateReferenceNumber(): string {
   return `DV${year}${timestamp}${random}`;
 }
 
-export const POST = requireRole(['admin', 'operator'])(verifyPaymentHandler);
+export const POST = withDBConnection(requireRole(['admin', 'operator'])(verifyPaymentHandler));

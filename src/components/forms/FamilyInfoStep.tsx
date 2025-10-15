@@ -26,6 +26,7 @@ const FamilyInfoStep: React.FC<FamilyInfoStepProps> = ({
   const isMarried = data.background_info.marital_status === 'Married';
   const hasSpouse = data.family_members.some(member => member.relationship_type === 'spouse');
   const children = data.family_members.filter(member => member.relationship_type === 'child');
+  const numberOfChildren = data.number_of_children || 0;
 
   const addSpouse = () => {
     const spouse: FamilyMember = {
@@ -71,6 +72,46 @@ const FamilyInfoStep: React.FC<FamilyInfoStepProps> = ({
     updateData({
       family_members: data.family_members.filter(member => member.id !== id)
     });
+  };
+
+  const handleNumberOfChildrenChange = (value: string) => {
+    const num = parseInt(value) || 0;
+    const clampedNum = Math.max(0, Math.min(10, num)); // Limit to 0-10 children
+
+    updateData({ number_of_children: clampedNum });
+
+    // Get current children
+    const currentChildren = data.family_members.filter(m => m.relationship_type === 'child');
+    const spouseMembers = data.family_members.filter(m => m.relationship_type === 'spouse');
+
+    if (clampedNum > currentChildren.length) {
+      // Add more children
+      const newChildren: FamilyMember[] = [];
+      for (let i = currentChildren.length; i < clampedNum; i++) {
+        newChildren.push({
+          id: generateId(),
+          relationship_type: 'child',
+          first_name: '',
+          middle_name: '',
+          last_name: '',
+          date_of_birth: '',
+          place_of_birth: '',
+          gender: '',
+          country_of_birth: '',
+          passport_number: '',
+          passport_expiry: '',
+        });
+      }
+      updateData({
+        family_members: [...spouseMembers, ...currentChildren, ...newChildren]
+      });
+    } else if (clampedNum < currentChildren.length) {
+      // Remove excess children
+      const childrenToKeep = currentChildren.slice(0, clampedNum);
+      updateData({
+        family_members: [...spouseMembers, ...childrenToKeep]
+      });
+    }
   };
 
   const updateFamilyMember = (id: string, field: string, value: string | File) => {
@@ -279,23 +320,31 @@ const FamilyInfoStep: React.FC<FamilyInfoStepProps> = ({
 
       {/* Children Section */}
       <div className="border-t border-gray-200 pt-6">
-        <div className="flex justify-between items-center mb-4">
-          <h4 className="text-md font-medium text-gray-900">
+        <div className="mb-4">
+          <h4 className="text-md font-medium text-gray-900 mb-4">
             Children Information (Unmarried, Under 21)
           </h4>
-          <Button onClick={addChild} size="sm" variant="outline">
-            Add Child
-          </Button>
+
+          <Input
+            label="Number of Children (Unmarried, Under 21)"
+            type="number"
+            min="0"
+            max="10"
+            value={numberOfChildren.toString()}
+            onChange={(e) => handleNumberOfChildrenChange(e.target.value)}
+            placeholder="0"
+            helpText="Enter the number of unmarried children under 21 years old"
+          />
         </div>
 
-        {children.length > 0 ? (
-          <div className="space-y-4">
+        {numberOfChildren > 0 ? (
+          <div className="space-y-4 mt-4">
             {children.map((child, index) => renderFamilyMember(child, index))}
           </div>
         ) : (
           <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
             <p className="text-sm text-gray-600">
-              No children added. If you have unmarried children under 21, click "Add Child" to include them.
+              No children specified. Enter the number of unmarried children under 21 above if applicable.
             </p>
           </div>
         )}

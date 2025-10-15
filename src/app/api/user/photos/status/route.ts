@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
+import { withDBConnection } from '@/middleware/dbConnection';
 import Form from '@/models/Form';
 import { requireAuth } from '@/middleware/auth';
 
 async function getPhotoStatusHandler(request: NextRequest) {
   try {
-    await connectDB();
 
     const { searchParams } = new URL(request.url);
     const formId = searchParams.get('formId');
@@ -95,4 +94,4 @@ async function getPhotoStatusHandler(request: NextRequest) {
   }
 }
 
-export const GET = requireAuth(getPhotoStatusHandler);
+export const GET = withDBConnection(requireAuth(getPhotoStatusHandler));

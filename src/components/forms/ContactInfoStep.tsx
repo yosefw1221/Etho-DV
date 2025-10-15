@@ -56,8 +56,8 @@ const ContactInfoStep: React.FC<ContactInfoStepProps> = ({
         error={errors.address}
         required
         placeholder="Street address, City, State/Region, Postal Code, Country"
-        showHelpIcon
-        onHelpClick={() => setHelpModal('address')}
+        infoContent="Enter your complete address including street, city, state/region, postal code, and country"
+        infoTitle="Address Help"
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -69,8 +69,8 @@ const ContactInfoStep: React.FC<ContactInfoStepProps> = ({
           error={errors.phone}
           required
           placeholder="+251912345678"
-          showHelpIcon
-          onHelpClick={() => setHelpModal('phone')}
+          infoContent="Enter your phone number with country code (e.g., +251912345678)"
+          infoTitle="Phone Number Help"
         />
 
         <Input
@@ -97,8 +97,8 @@ const ContactInfoStep: React.FC<ContactInfoStepProps> = ({
             error={errors.passport_number}
             required
             placeholder="ET1234567"
-            showHelpIcon
-            onHelpClick={() => setHelpModal('passport_number')}
+            infoContent="Enter your passport number exactly as it appears on your passport"
+            infoTitle="Passport Number Help"
           />
 
           <Input

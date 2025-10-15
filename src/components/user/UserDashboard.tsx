@@ -163,7 +163,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user, stats, locale }) =>
                       </p>
                       <p className="text-sm text-gray-600">
                         {stats.last_submission_date 
-                          ? formatDate(stats.last_submission_date)
+                          ? formatDate(new Date(stats.last_submission_date))
                           : 'No submissions yet'
                         }
                       </p>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
+import { withDBConnection } from '@/middleware/dbConnection';
 import Form from '@/models/Form';
 import User from '@/models/User';
 import { requireAuth } from '@/middleware/auth';
@@ -11,7 +11,9 @@ const formSubmissionSchema = z.object({
     first_name: z.string().min(1, 'First name is required'),
     middle_name: z.string().optional(),
     last_name: z.string().min(1, 'Last name is required'),
-    date_of_birth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
+    date_of_birth: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
     place_of_birth: z.string().min(1, 'Place of birth is required'),
     gender: z.enum(['Male', 'Female']),
     country_of_birth: z.string().min(1, 'Country of birth is required'),
@@ -19,36 +21,36 @@ const formSubmissionSchema = z.object({
     phone: z.string().min(1, 'Phone number is required'),
     email: z.string().email('Invalid email format'),
     passport_number: z.string().min(1, 'Passport number is required'),
-    passport_expiry: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid passport expiry date'),
+    passport_expiry: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid passport expiry date'),
     education_level: z.string().min(1, 'Education level is required'),
     occupation: z.string().optional(),
-    marital_status: z.enum(['Single', 'Married'])
+    marital_status: z.enum(['Single', 'Married']),
   }),
-  family_members: z.array(z.object({
-    relationship_type: z.enum(['spouse', 'child']),
-    first_name: z.string().min(1, 'First name is required'),
-    middle_name: z.string().optional(),
-    last_name: z.string().min(1, 'Last name is required'),
-    date_of_birth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
-    place_of_birth: z.string().min(1, 'Place of birth is required'),
-    gender: z.enum(['Male', 'Female']),
-    country_of_birth: z.string().min(1, 'Country of birth is required'),
-    passport_number: z.string().optional(),
-    passport_expiry: z.string().optional()
-  })).optional(),
-  photos: z.array(z.object({
-    person_type: z.enum(['primary', 'spouse', 'child']),
-    person_id: z.string().optional(),
-    file_url: z.string().url('Invalid photo URL'),
-    file_name: z.string().min(1, 'File name is required'),
-    file_size: z.number().min(1, 'File size required')
-  })).optional()
+  family_members: z
+    .array(
+      z.object({
+        relationship_type: z.enum(['spouse', 'child']),
+        first_name: z.string().min(1, 'First name is required'),
+        middle_name: z.string().optional(),
+        last_name: z.string().min(1, 'Last name is required'),
+        date_of_birth: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
+        place_of_birth: z.string().min(1, 'Place of birth is required'),
+        gender: z.enum(['Male', 'Female']),
+        country_of_birth: z.string().min(1, 'Country of birth is required'),
+        passport_number: z.string().optional(),
+        passport_expiry: z.string().optional(),
+      })
+    )
+    .optional(),
+  photos: z.array(z.string().url('Invalid photo URL')).optional(),
 });
 
 async function submitFormHandler(request: NextRequest) {
   try {
-    await connectDB();
-    
     const userId = (request as any).user.userId;
     const body = await request.json();
     const validatedData = formSubmissionSchema.parse(body);
@@ -65,11 +67,14 @@ async function submitFormHandler(request: NextRequest) {
     // Validate business rules
     const validationErrors = validateBusinessRules(validatedData);
     if (validationErrors.length > 0) {
-      return NextResponse.json({
-        success: false,
-        error: 'Validation failed',
-        validation_errors: validationErrors
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation failed',
+          validation_errors: validationErrors,
+        },
+        { status: 400 }
+      );
     }
 
     // Create form with payment information
@@ -78,35 +83,40 @@ async function submitFormHandler(request: NextRequest) {
       applicant_data: {
         ...validatedData.applicant_data,
         date_of_birth: new Date(validatedData.applicant_data.date_of_birth),
-        passport_expiry: new Date(validatedData.applicant_data.passport_expiry)
+        passport_expiry: new Date(validatedData.applicant_data.passport_expiry),
       },
-      family_members: validatedData.family_members?.map(member => ({
-        ...member,
-        date_of_birth: new Date(member.date_of_birth),
-        passport_expiry: member.passport_expiry ? new Date(member.passport_expiry) : undefined
-      })) || [],
+      family_members:
+        validatedData.family_members?.map((member) => ({
+          ...member,
+          date_of_birth: new Date(member.date_of_birth),
+          passport_expiry: member.passport_expiry
+            ? new Date(member.passport_expiry)
+            : undefined,
+        })) || [],
       photos: validatedData.photos || [],
       payment_amount: 1, // $1 USD for individual users
       payment_currency: 'USD',
       payment_status: 'pending',
-      processing_status: 'draft'
+      processing_status: 'draft',
     };
 
     const form = new Form(formData);
     await form.save();
 
-    return NextResponse.json({
-      success: true,
-      message: 'Form submitted successfully',
-      form_id: form._id.toString(),
-      payment_required: true,
-      payment_amount: 1,
-      payment_currency: 'USD'
-    }, { status: 201 });
-
+    return NextResponse.json(
+      {
+        success: true,
+        message: 'Form submitted successfully',
+        form_id: form._id.toString(),
+        payment_required: true,
+        payment_amount: 1,
+        payment_currency: 'USD',
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Form submission error:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation failed', details: error.errors },
@@ -121,17 +131,19 @@ async function submitFormHandler(request: NextRequest) {
   }
 }
 
-function validateBusinessRules(data: any): Array<{field: string, error: string}> {
-  const errors: Array<{field: string, error: string}> = [];
+function validateBusinessRules(
+  data: any
+): Array<{ field: string; error: string }> {
+  const errors: Array<{ field: string; error: string }> = [];
 
   // Check age validation for primary applicant
   const birthDate = new Date(data.applicant_data.date_of_birth);
   const age = new Date().getFullYear() - birthDate.getFullYear();
-  
+
   if (age < 18 || age > 100) {
     errors.push({
       field: 'applicant_data.date_of_birth',
-      error: 'Age must be between 18 and 100 years'
+      error: 'Age must be between 18 and 100 years',
     });
   }
 
@@ -140,17 +152,19 @@ function validateBusinessRules(data: any): Array<{field: string, error: string}>
   if (passportExpiry <= new Date()) {
     errors.push({
       field: 'applicant_data.passport_expiry',
-      error: 'Passport must not be expired'
+      error: 'Passport must not be expired',
     });
   }
 
   // Validate spouse information if married
   if (data.applicant_data.marital_status === 'Married') {
-    const spouseExists = data.family_members?.some((member: any) => member.relationship_type === 'spouse');
+    const spouseExists = data.family_members?.some(
+      (member: any) => member.relationship_type === 'spouse'
+    );
     if (!spouseExists) {
       errors.push({
         field: 'family_members',
-        error: 'Spouse information is required for married applicants'
+        error: 'Spouse information is required for married applicants',
       });
     }
   }
@@ -160,11 +174,11 @@ function validateBusinessRules(data: any): Array<{field: string, error: string}>
     if (member.relationship_type === 'child') {
       const childBirthDate = new Date(member.date_of_birth);
       const childAge = new Date().getFullYear() - childBirthDate.getFullYear();
-      
+
       if (childAge >= 21) {
         errors.push({
           field: `family_members[${index}].date_of_birth`,
-          error: 'Children must be under 21 years old'
+          error: 'Children must be under 21 years old',
         });
       }
     }
@@ -173,4 +187,4 @@ function validateBusinessRules(data: any): Array<{field: string, error: string}>
   return errors;
 }
 
-export const POST = requireAuth(submitFormHandler);
+export const POST = withDBConnection(requireAuth(submitFormHandler));

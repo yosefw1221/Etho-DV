@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
+import { withDBConnection } from '@/middleware/dbConnection';
 import Payment from '@/models/Payment';
 import Form from '@/models/Form';
 import { requireAuth } from '@/middleware/auth';
@@ -17,8 +17,7 @@ const verifyPaymentSchema = z.object({
 
 async function verifyPaymentHandler(request: NextRequest) {
   try {
-    await connectDB();
-    
+
     const body = await request.json();
     const validatedData = verifyPaymentSchema.parse(body);
     
@@ -244,4 +243,4 @@ async function simulatePaymentVerification(
   }
 }
 
-export const POST = requireAuth(verifyPaymentHandler);
+export const POST = withDBConnection(requireAuth(verifyPaymentHandler));

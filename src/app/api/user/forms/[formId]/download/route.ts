@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
+import { withDBConnection } from '@/middleware/dbConnection';
 import Form from '@/models/Form';
 import { requireAuth } from '@/middleware/auth';
 
@@ -8,8 +8,7 @@ async function downloadFormHandler(
   { params }: { params: { formId: string } }
 ) {
   try {
-    await connectDB();
-    
+
     const userId = (request as any).user.userId;
     const { formId } = params;
 
@@ -67,4 +66,4 @@ async function downloadFormHandler(
   }
 }
 
-export const GET = requireAuth(downloadFormHandler);
+export const GET = withDBConnection(requireAuth(downloadFormHandler));

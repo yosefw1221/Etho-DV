@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
+import { withDBConnection } from '@/middleware/dbConnection';
 import Form from '@/models/Form';
 import { requireAuth } from '@/middleware/auth';
 
 async function getUserFormsHandler(request: NextRequest) {
   try {
-    await connectDB();
-    
     const userId = (request as any).user.userId;
 
     // Get all forms for this user with pagination
@@ -22,18 +20,20 @@ async function getUserFormsHandler(request: NextRequest) {
       .lean();
 
     // Transform forms for frontend
-    const transformedForms = allForms.map(form => ({
-      id: form._id.toString(),
-      reference_number: form.reference_number,
-      applicant_name: `${form.applicant_data.first_name} ${form.applicant_data.last_name}`,
-      submission_date: form.created_at.toISOString(),
-      processing_status: form.processing_status,
-      payment_status: form.payment_status,
-      payment_amount: form.payment_amount || 1,
-      payment_currency: form.payment_currency || 'USD',
-      estimated_completion: form.estimated_completion?.toISOString(),
-      result_available: form.result_available || false,
-      dv_confirmation_number: form.dv_confirmation_number
+    const transformedForms = allForms.map((form) => ({
+      id: (form as any)._id.toString(),
+      reference_number: (form as any).reference_number,
+      applicant_name: `${(form as any).applicant_data.first_name} ${
+        (form as any).applicant_data.last_name
+      }`,
+      submission_date: (form as any).created_at.toISOString(),
+      processing_status: (form as any).processing_status,
+      payment_status: (form as any).payment_status,
+      payment_amount: (form as any).payment_amount || 1,
+      payment_currency: (form as any).payment_currency || 'USD',
+      estimated_completion: (form as any).estimated_completion?.toISOString(),
+      result_available: (form as any).result_available || false,
+      dv_confirmation_number: (form as any).dv_confirmation_number,
     }));
 
     // Get total count for pagination
@@ -46,10 +46,9 @@ async function getUserFormsHandler(request: NextRequest) {
         page,
         limit,
         total: totalCount,
-        pages: Math.ceil(totalCount / limit)
-      }
+        pages: Math.ceil(totalCount / limit),
+      },
     });
-
   } catch (error) {
     console.error('User forms error:', error);
     return NextResponse.json(
@@ -59,4 +58,4 @@ async function getUserFormsHandler(request: NextRequest) {
   }
 }
 
-export const GET = requireAuth(getUserFormsHandler);
+export const GET = withDBConnection(requireAuth(getUserFormsHandler));
