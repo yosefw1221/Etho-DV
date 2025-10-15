@@ -5,8 +5,10 @@ import { useTranslations } from 'next-intl';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Modal from '@/components/ui/Modal';
+import EthiopianDateInput from '@/components/ui/EthiopianDateInput';
 import { DVFormData, COUNTRIES } from '@/types/form';
 import { validatePersonalInfo, validateField } from '@/lib/validation';
+import { calculateAge } from '@/lib/utils';
 
 interface PersonalInfoStepProps {
   data: DVFormData;
@@ -35,7 +37,10 @@ const PersonalInfoStep: React.FC<PersonalInfoStepProps> = ({
     // Real-time validation on field blur
     const validationError = validateField(field, value);
     if (validationError) {
-      // You could show a toast or inline error here
+      // Show inline validation error
+      const currentErrors = { ...errors };
+      currentErrors[field] = validationError.message;
+      // Note: We don't set errors here as it's managed by parent component
       console.log(`Validation error for ${field}:`, validationError.message);
     }
   };
@@ -62,6 +67,7 @@ const PersonalInfoStep: React.FC<PersonalInfoStepProps> = ({
           label={t('form.first_name')}
           value={data.personal_info.first_name}
           onChange={(e) => handleInputChange('first_name', e.target.value)}
+          onBlur={(e) => handleFieldBlur('first_name', e.target.value)}
           error={errors.first_name}
           required
           placeholder="Enter your first name"
@@ -71,6 +77,8 @@ const PersonalInfoStep: React.FC<PersonalInfoStepProps> = ({
           label={t('form.middle_name')}
           value={data.personal_info.middle_name || ''}
           onChange={(e) => handleInputChange('middle_name', e.target.value)}
+          onBlur={(e) => handleFieldBlur('middle_name', e.target.value)}
+          error={errors.middle_name}
           placeholder="Enter your middle name (optional)"
         />
       </div>
@@ -79,21 +87,29 @@ const PersonalInfoStep: React.FC<PersonalInfoStepProps> = ({
         label={t('form.last_name')}
         value={data.personal_info.last_name}
         onChange={(e) => handleInputChange('last_name', e.target.value)}
+        onBlur={(e) => handleFieldBlur('last_name', e.target.value)}
         error={errors.last_name}
         required
         placeholder="Enter your last name"
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Input
+        <EthiopianDateInput
           label={t('form.date_of_birth')}
-          type="date"
           value={data.personal_info.date_of_birth}
-          onChange={(e) => handleInputChange('date_of_birth', e.target.value)}
+          onChange={(value) => handleInputChange('date_of_birth', value)}
           error={errors.date_of_birth}
           required
-          infoContent="Enter your date of birth as shown on your passport or birth certificate"
-          infoTitle="Date of Birth Help"
+          helpText={
+            data.personal_info.date_of_birth ? (
+              (() => {
+                const age = calculateAge(new Date(data.personal_info.date_of_birth));
+                return age >= 18 
+                  ? `Age: ${age} years ✓` 
+                  : `Age: ${age} years - Must be 18+ to apply`;
+              })()
+            ) : "You can use either Gregorian or Ethiopian calendar"
+          }
         />
 
         <Select
@@ -110,6 +126,7 @@ const PersonalInfoStep: React.FC<PersonalInfoStepProps> = ({
         label={t('form.place_of_birth')}
         value={data.personal_info.place_of_birth}
         onChange={(e) => handleInputChange('place_of_birth', e.target.value)}
+        onBlur={(e) => handleFieldBlur('place_of_birth', e.target.value)}
         error={errors.place_of_birth}
         required
         placeholder="Enter city and country (e.g., Addis Ababa, Ethiopia)"

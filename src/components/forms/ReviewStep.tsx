@@ -5,7 +5,8 @@ import { useTranslations } from 'next-intl';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import { DVFormData } from '@/types/form';
-import { formatDate } from '@/lib/utils';
+import { formatDate, calculateAge } from '@/lib/utils';
+import { validateCompleteForm } from '@/lib/validation';
 
 interface ReviewStepProps {
   data: DVFormData;
@@ -46,6 +47,10 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
   const familyMembers = data.family_members || [];
   const spouse = familyMembers.find(member => member.relationship_type === 'spouse');
   const children = familyMembers.filter(member => member.relationship_type === 'child');
+  
+  // Validate complete form for review
+  const formValidation = validateCompleteForm(data);
+  const hasValidationErrors = !formValidation.isValid;
 
   return (
     <div className="space-y-8">
@@ -102,26 +107,33 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
           <div>
             <span className="font-medium">Full Name:</span>
             <p className="text-gray-700">
-              {data.personal_info.first_name} {data.personal_info.middle_name} {data.personal_info.last_name}
+              {data.personal_info.first_name} {data.personal_info.middle_name ? `${data.personal_info.middle_name} ` : ''}{data.personal_info.last_name}
             </p>
           </div>
           <div>
             <span className="font-medium">Date of Birth:</span>
             <p className="text-gray-700">
-              {data.personal_info.date_of_birth ? formatDate(new Date(data.personal_info.date_of_birth)) : ''}
+              {data.personal_info.date_of_birth ? (
+                <>
+                  {formatDate(new Date(data.personal_info.date_of_birth))}
+                  <span className="text-sm text-gray-500 ml-2">
+                    (Age: {calculateAge(new Date(data.personal_info.date_of_birth))} years)
+                  </span>
+                </>
+              ) : 'Not provided'}
             </p>
           </div>
           <div>
             <span className="font-medium">Place of Birth:</span>
-            <p className="text-gray-700">{data.personal_info.place_of_birth}</p>
+            <p className="text-gray-700">{data.personal_info.place_of_birth || 'Not provided'}</p>
           </div>
           <div>
             <span className="font-medium">Gender:</span>
-            <p className="text-gray-700">{data.personal_info.gender}</p>
+            <p className="text-gray-700">{data.personal_info.gender || 'Not selected'}</p>
           </div>
           <div>
             <span className="font-medium">Country of Birth:</span>
-            <p className="text-gray-700">{data.personal_info.country_of_birth}</p>
+            <p className="text-gray-700">{data.personal_info.country_of_birth || 'Not selected'}</p>
           </div>
           {data.personal_info.country_of_eligibility && (
             <div>
@@ -177,24 +189,24 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="md:col-span-2">
             <span className="font-medium">Address:</span>
-            <p className="text-gray-700">{data.contact_info.address}</p>
+            <p className="text-gray-700">{data.contact_info.address || 'Not provided'}</p>
           </div>
           <div>
             <span className="font-medium">Phone:</span>
-            <p className="text-gray-700">{data.contact_info.phone}</p>
+            <p className="text-gray-700">{data.contact_info.phone || 'Not provided'}</p>
           </div>
           <div>
             <span className="font-medium">Email:</span>
-            <p className="text-gray-700">{data.contact_info.email}</p>
+            <p className="text-gray-700">{data.contact_info.email || 'Not provided'}</p>
           </div>
           <div>
             <span className="font-medium">Passport Number:</span>
-            <p className="text-gray-700">{data.contact_info.passport_number}</p>
+            <p className="text-gray-700">{data.contact_info.passport_number || 'Not provided'}</p>
           </div>
           <div>
             <span className="font-medium">Passport Expiry:</span>
             <p className="text-gray-700">
-              {data.contact_info.passport_expiry ? formatDate(new Date(data.contact_info.passport_expiry)) : ''}
+              {data.contact_info.passport_expiry ? formatDate(new Date(data.contact_info.passport_expiry)) : 'Not provided'}
             </p>
           </div>
         </div>
@@ -250,18 +262,29 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
           <div className="mb-4">
             <h5 className="font-medium text-gray-800 mb-2">Spouse:</h5>
             <div className="text-sm space-y-1">
-              <p><span className="font-medium">Name:</span> {spouse.first_name} {spouse.middle_name} {spouse.last_name}</p>
-              <p><span className="font-medium">Date of Birth:</span> {spouse.date_of_birth ? formatDate(new Date(spouse.date_of_birth)) : ''}</p>
-              <p><span className="font-medium">Place of Birth:</span> {spouse.place_of_birth}</p>
-              <p><span className="font-medium">Gender:</span> {spouse.gender}</p>
-              <p><span className="font-medium">Country of Birth:</span> {spouse.country_of_birth}</p>
-              {spouse.passport_number && (
-                <p><span className="font-medium">Passport Number:</span> {spouse.passport_number}</p>
-              )}
-              {spouse.passport_expiry && (
-                <p><span className="font-medium">Passport Expiry:</span> {formatDate(new Date(spouse.passport_expiry))}</p>
-              )}
-              <p><span className="font-medium">Photo:</span> {spouse.photo ? `✓ ${spouse.photo.name || 'Uploaded'}` : 'Not uploaded'}</p>
+              <p><span className="font-medium">Name:</span> {spouse.first_name} {spouse.middle_name ? `${spouse.middle_name} ` : ''}{spouse.last_name}</p>
+              <p><span className="font-medium">Date of Birth:</span> 
+                {spouse.date_of_birth ? (
+                  <>
+                    {formatDate(new Date(spouse.date_of_birth))}
+                    <span className="text-gray-500 ml-2">
+                      (Age: {calculateAge(new Date(spouse.date_of_birth))} years)
+                    </span>
+                  </>
+                ) : 'Not provided'}
+              </p>
+              <p><span className="font-medium">Place of Birth:</span> {spouse.place_of_birth || 'Not provided'}</p>
+              <p><span className="font-medium">Gender:</span> {spouse.gender || 'Not selected'}</p>
+              <p><span className="font-medium">Country of Birth:</span> {spouse.country_of_birth || 'Not selected'}</p>
+              <p><span className="font-medium">Passport Number:</span> {spouse.passport_number || 'Not provided'}</p>
+              <p><span className="font-medium">Passport Expiry:</span> 
+                {spouse.passport_expiry ? formatDate(new Date(spouse.passport_expiry)) : 'Not provided'}
+              </p>
+              <p><span className="font-medium">Photo:</span> 
+                <span className={spouse.photo ? 'text-green-600' : 'text-red-600'}>
+                  {spouse.photo ? `✓ ${spouse.photo.name || 'Uploaded'}` : '✗ Not uploaded'}
+                </span>
+              </p>
             </div>
           </div>
         )}
@@ -274,18 +297,29 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
                 <div key={child.id} className="text-sm">
                   <p className="font-medium">Child {index + 1}:</p>
                   <div className="ml-4 space-y-1">
-                    <p><span className="font-medium">Name:</span> {child.first_name} {child.middle_name} {child.last_name}</p>
-                    <p><span className="font-medium">Date of Birth:</span> {child.date_of_birth ? formatDate(new Date(child.date_of_birth)) : ''}</p>
-                    <p><span className="font-medium">Place of Birth:</span> {child.place_of_birth}</p>
-                    <p><span className="font-medium">Gender:</span> {child.gender}</p>
-                    <p><span className="font-medium">Country of Birth:</span> {child.country_of_birth}</p>
-                    {child.passport_number && (
-                      <p><span className="font-medium">Passport Number:</span> {child.passport_number}</p>
-                    )}
-                    {child.passport_expiry && (
-                      <p><span className="font-medium">Passport Expiry:</span> {formatDate(new Date(child.passport_expiry))}</p>
-                    )}
-                    <p><span className="font-medium">Photo:</span> {child.photo ? `✓ ${child.photo.name || 'Uploaded'}` : 'Not uploaded'}</p>
+                    <p><span className="font-medium">Name:</span> {child.first_name} {child.middle_name ? `${child.middle_name} ` : ''}{child.last_name}</p>
+                    <p><span className="font-medium">Date of Birth:</span> 
+                      {child.date_of_birth ? (
+                        <>
+                          {formatDate(new Date(child.date_of_birth))}
+                          <span className="text-gray-500 ml-2">
+                            (Age: {calculateAge(new Date(child.date_of_birth))} years)
+                          </span>
+                        </>
+                      ) : 'Not provided'}
+                    </p>
+                    <p><span className="font-medium">Place of Birth:</span> {child.place_of_birth || 'Not provided'}</p>
+                    <p><span className="font-medium">Gender:</span> {child.gender || 'Not selected'}</p>
+                    <p><span className="font-medium">Country of Birth:</span> {child.country_of_birth || 'Not selected'}</p>
+                    <p><span className="font-medium">Passport Number:</span> {child.passport_number || 'Not provided'}</p>
+                    <p><span className="font-medium">Passport Expiry:</span> 
+                      {child.passport_expiry ? formatDate(new Date(child.passport_expiry)) : 'Not provided'}
+                    </p>
+                    <p><span className="font-medium">Photo:</span> 
+                      <span className={child.photo ? 'text-green-600' : 'text-red-600'}>
+                        {child.photo ? `✓ ${child.photo.name || 'Uploaded'}` : '✗ Not uploaded'}
+                      </span>
+                    </p>
                   </div>
                 </div>
               ))}
@@ -296,6 +330,56 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
         {!spouse && children.length === 0 && (
           <p className="text-sm text-gray-600">No family members added.</p>
         )}
+      </div>
+
+      {/* Validation Summary */}
+      {hasValidationErrors && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <h4 className="font-medium text-red-900 mb-4">
+            ⚠️ Please Fix the Following Issues Before Submitting
+          </h4>
+          <div className="space-y-2">
+            {formValidation.errors.map((error, index) => (
+              <div key={index} className="text-sm text-red-800">
+                • <strong>{error.field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}:</strong> {error.message}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Application Completeness Check */}
+      <div className={`rounded-lg p-6 ${hasValidationErrors ? 'bg-yellow-50 border border-yellow-200' : 'bg-green-50 border border-green-200'}`}>
+        <h4 className={`font-medium mb-4 ${hasValidationErrors ? 'text-yellow-900' : 'text-green-900'}`}>
+          {hasValidationErrors ? '📋 Application Status: Incomplete' : '✅ Application Status: Ready to Submit'}
+        </h4>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div>
+            <span className={`font-medium ${hasValidationErrors ? 'text-yellow-800' : 'text-green-800'}`}>Personal Info:</span>
+            <p className={hasValidationErrors ? 'text-yellow-700' : 'text-green-700'}>
+              {data.personal_info.first_name && data.personal_info.last_name && data.personal_info.date_of_birth ? '✓ Complete' : '✗ Incomplete'}
+            </p>
+          </div>
+          <div>
+            <span className={`font-medium ${hasValidationErrors ? 'text-yellow-800' : 'text-green-800'}`}>Contact Info:</span>
+            <p className={hasValidationErrors ? 'text-yellow-700' : 'text-green-700'}>
+              {data.contact_info.email && data.contact_info.phone && data.contact_info.address ? '✓ Complete' : '✗ Incomplete'}
+            </p>
+          </div>
+          <div>
+            <span className={`font-medium ${hasValidationErrors ? 'text-yellow-800' : 'text-green-800'}`}>Primary Photo:</span>
+            <p className={hasValidationErrors ? 'text-yellow-700' : 'text-green-700'}>
+              {data.background_info.photo ? '✓ Uploaded' : '✗ Missing'}
+            </p>
+          </div>
+          <div>
+            <span className={`font-medium ${hasValidationErrors ? 'text-yellow-800' : 'text-green-800'}`}>Family Photos:</span>
+            <p className={hasValidationErrors ? 'text-yellow-700' : 'text-green-700'}>
+              {familyMembers.every(member => member.photo) ? '✓ All Uploaded' : `${familyMembers.filter(m => m.photo).length}/${familyMembers.length} Uploaded`}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Terms and Conditions */}
@@ -334,13 +418,19 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
       <div className="text-center">
         <Button
           onClick={handleSubmit}
-          disabled={!agreed || isSubmitting}
+          disabled={!agreed || isSubmitting || hasValidationErrors}
           loading={isSubmitting}
           size="lg"
           className="px-12"
         >
           {t('form.submit')} Application
         </Button>
+        
+        {hasValidationErrors && (
+          <p className="text-sm text-red-600 mt-2">
+            Please fix all validation errors before submitting
+          </p>
+        )}
       </div>
 
       {/* Confirmation Modal */}

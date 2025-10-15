@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import Input from '@/components/ui/Input';
 import Modal from '@/components/ui/Modal';
 import { DVFormData } from '@/types/form';
+import { validateField } from '@/lib/validation';
 
 interface ContactInfoStepProps {
   data: DVFormData;
@@ -27,6 +28,14 @@ const ContactInfoStep: React.FC<ContactInfoStepProps> = ({
         [field]: value
       }
     });
+  };
+
+  const handleFieldBlur = (field: string, value: string) => {
+    // Real-time validation on field blur
+    const validationError = validateField(field, value);
+    if (validationError) {
+      console.log(`Validation error for ${field}:`, validationError.message);
+    }
   };
 
   const getHelpContent = (field: string) => {
@@ -53,6 +62,7 @@ const ContactInfoStep: React.FC<ContactInfoStepProps> = ({
         label={t('form.address')}
         value={data.contact_info.address}
         onChange={(e) => handleInputChange('address', e.target.value)}
+        onBlur={(e) => handleFieldBlur('address', e.target.value)}
         error={errors.address}
         required
         placeholder="Street address, City, State/Region, Postal Code, Country"
@@ -66,6 +76,7 @@ const ContactInfoStep: React.FC<ContactInfoStepProps> = ({
           type="tel"
           value={data.contact_info.phone}
           onChange={(e) => handleInputChange('phone', e.target.value)}
+          onBlur={(e) => handleFieldBlur('phone', e.target.value)}
           error={errors.phone}
           required
           placeholder="+251912345678"
@@ -78,6 +89,7 @@ const ContactInfoStep: React.FC<ContactInfoStepProps> = ({
           type="email"
           value={data.contact_info.email}
           onChange={(e) => handleInputChange('email', e.target.value)}
+          onBlur={(e) => handleFieldBlur('email', e.target.value)}
           error={errors.email}
           required
           placeholder="your.email@example.com"
@@ -94,6 +106,7 @@ const ContactInfoStep: React.FC<ContactInfoStepProps> = ({
             label={t('form.passport_number')}
             value={data.contact_info.passport_number}
             onChange={(e) => handleInputChange('passport_number', e.target.value.toUpperCase())}
+            onBlur={(e) => handleFieldBlur('passport_number', e.target.value)}
             error={errors.passport_number}
             required
             placeholder="ET1234567"
@@ -106,9 +119,28 @@ const ContactInfoStep: React.FC<ContactInfoStepProps> = ({
             type="date"
             value={data.contact_info.passport_expiry}
             onChange={(e) => handleInputChange('passport_expiry', e.target.value)}
+            onBlur={(e) => handleFieldBlur('passport_expiry', e.target.value)}
             error={errors.passport_expiry}
             required
             min={new Date().toISOString().split('T')[0]} // Prevent past dates
+            helpText={
+              data.contact_info.passport_expiry ? (
+                (() => {
+                  const expiryDate = new Date(data.contact_info.passport_expiry);
+                  const today = new Date();
+                  const sixMonthsFromNow = new Date();
+                  sixMonthsFromNow.setMonth(today.getMonth() + 6);
+                  
+                  if (expiryDate <= today) {
+                    return "⚠️ Passport is expired";
+                  } else if (expiryDate <= sixMonthsFromNow) {
+                    return "⚠️ Expires within 6 months - consider renewing";
+                  } else {
+                    return "✓ Valid passport expiry date";
+                  }
+                })()
+              ) : undefined
+            }
           />
         </div>
       </div>

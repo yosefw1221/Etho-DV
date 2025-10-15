@@ -115,18 +115,29 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
         // Photo validation - check if photo exists
         const photo = formData.background_info.photo;
         if (!photo) {
-          setErrors({ photo: 'Photo is required' });
+          setErrors({ photo: 'Photo is required for the primary applicant' });
           return false;
         }
         // If photo is PhotoData type, check for url
         if (typeof photo === 'object' && 'url' in photo && !photo.url) {
-          setErrors({ photo: 'Photo is required' });
+          setErrors({ photo: 'Photo upload failed. Please try again.' });
           return false;
         }
         // If photo is File type, check if it's a valid file
         if (photo instanceof File && photo.size === 0) {
-          setErrors({ photo: 'Photo is required' });
+          setErrors({ photo: 'Photo file is empty. Please select a valid photo.' });
           return false;
+        }
+        // Additional photo validation
+        if (photo instanceof File) {
+          if (photo.size > 240000) { // 240KB limit
+            setErrors({ photo: 'Photo size must be less than 240KB' });
+            return false;
+          }
+          if (!photo.type.match(/^image\/(jpeg|jpg)$/)) {
+            setErrors({ photo: 'Photo must be in JPEG format' });
+            return false;
+          }
         }
         setErrors({});
         return true;
@@ -138,6 +149,10 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
         break;
       default:
         return true;
+    }
+
+    if (!validation) {
+      return true;
     }
 
     const errorMap = validation.errors.reduce((acc, error) => {
