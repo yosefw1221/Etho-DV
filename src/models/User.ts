@@ -69,8 +69,9 @@ const UserSchema: Schema = new Schema(
     // Referral system fields
     referral_code: {
       type: String,
-      required: true,
+      required: false,
       unique: true,
+      sparse: true, // Allow multiple null values for unique constraint
       trim: true,
     },
     referred_by: {
