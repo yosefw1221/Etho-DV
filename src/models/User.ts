@@ -1,10 +1,10 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IUser extends Document {
-  email: string;
+  email?: string;
   password: string;
   name: string;
-  phone: string;
+  phone?: string;
   role: 'user' | 'agent' | 'admin' | 'operator';
   language_preference: 'en' | 'am' | 'ti' | 'or';
   
@@ -28,8 +28,9 @@ const UserSchema: Schema = new Schema(
   {
     email: {
       type: String,
-      required: [true, 'Email is required'],
+      required: false,
       unique: true,
+      sparse: true, // Allow multiple null values
       lowercase: true,
       trim: true,
       match: [
@@ -49,7 +50,9 @@ const UserSchema: Schema = new Schema(
     },
     phone: {
       type: String,
-      required: [true, 'Phone number is required'],
+      required: false,
+      unique: true,
+      sparse: true, // Allow multiple null values
       trim: true,
     },
     role: {
@@ -117,6 +120,12 @@ function generateReferralCode(): string {
 
 // Pre-save hooks
 UserSchema.pre('save', function (next) {
+  // Validate that at least email or phone is provided
+  if (!this.email && !this.phone) {
+    const error = new Error('Either email or phone number must be provided');
+    return next(error);
+  }
+
   // Generate referral code for new users
   if (this.isNew && !this.referral_code) {
     this.referral_code = generateReferralCode();

@@ -22,12 +22,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ locale }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    confirmPassword: '',
-    first_name: '',
-    last_name: '',
+    name: '',
     phone: '',
     business_name: '', // For agents only
-    terms_accepted: false
+    terms_accepted: false,
+    referralCode: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -47,10 +46,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ locale }) => {
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    // Email validation
-    if (!formData.email.trim()) {
-      newErrors.email = t('auth.required_field');
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    // Require either email or phone
+    const hasEmail = formData.email && formData.email.trim().length > 0;
+    const hasPhone = formData.phone && formData.phone.trim().length > 0;
+    
+    if (!hasEmail && !hasPhone) {
+      newErrors.email = 'Either email or phone number is required';
+      newErrors.phone = 'Either email or phone number is required';
+    }
+
+    // Email validation (if provided)
+    if (formData.email && formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = t('auth.invalid_email');
     }
 
@@ -61,26 +67,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ locale }) => {
       newErrors.password = 'Password must be at least 8 characters long';
     }
 
-    // Confirm password validation
-    if (!formData.confirmPassword.trim()) {
-      newErrors.confirmPassword = t('auth.required_field');
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-
     // Name validation
-    if (!formData.first_name.trim()) {
-      newErrors.first_name = t('auth.required_field');
+    if (!formData.name.trim()) {
+      newErrors.name = t('auth.required_field');
     }
 
-    if (!formData.last_name.trim()) {
-      newErrors.last_name = t('auth.required_field');
-    }
-
-    // Phone validation
-    if (!formData.phone.trim()) {
-      newErrors.phone = t('auth.required_field');
-    } else if (!/^\+?[1-9]\d{1,14}$/.test(formData.phone.replace(/\s/g, ''))) {
+    // Phone validation (if provided)
+    if (formData.phone && formData.phone.trim() && !/^\+?[\d\s\-()]{8,}$/.test(formData.phone)) {
       newErrors.phone = 'Please enter a valid phone number';
     }
 
@@ -112,8 +105,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ locale }) => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          ...formData,
-          role: userType === 'agent' ? 'agent' : 'user'
+          email: formData.email || undefined,
+          phone: formData.phone || undefined,
+          password: formData.password,
+          name: formData.name,
+          business_name: formData.business_name || undefined,
+          referral_code: formData.referralCode || undefined,
+          role: userType === 'agent' ? 'agent' : 'user',
+          language_preference: locale
         })
       });
 

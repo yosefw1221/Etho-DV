@@ -45,12 +45,19 @@ const ModernRegisterForm: React.FC<ModernRegisterFormProps> = ({ locale }) => {
 
     // Required fields
     if (!formData.name.trim()) newErrors.name = 'Name is required';
-    if (!formData.email.trim()) newErrors.email = 'Email is required';
-    if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
     if (!formData.password.trim()) newErrors.password = 'Password is required';
 
-    // Email validation
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    // Require either email or phone
+    const hasEmail = formData.email && formData.email.trim().length > 0;
+    const hasPhone = formData.phone && formData.phone.trim().length > 0;
+    
+    if (!hasEmail && !hasPhone) {
+      newErrors.email = 'Either email or phone number is required';
+      newErrors.phone = 'Either email or phone number is required';
+    }
+
+    // Email validation (if provided)
+    if (formData.email && formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
 
@@ -59,8 +66,8 @@ const ModernRegisterForm: React.FC<ModernRegisterFormProps> = ({ locale }) => {
       newErrors.password = 'Password must be at least 8 characters long';
     }
 
-    // Phone validation
-    if (formData.phone && !/^\+?[\d\s\-()]{8,}$/.test(formData.phone)) {
+    // Phone validation (if provided)
+    if (formData.phone && formData.phone.trim() && !/^\+?[\d\s\-()]{8,}$/.test(formData.phone)) {
       newErrors.phone = 'Please enter a valid phone number';
     }
 
@@ -86,16 +93,24 @@ const ModernRegisterForm: React.FC<ModernRegisterFormProps> = ({ locale }) => {
     setIsLoading(true);
 
     try {
-      const registrationData = {
-        email: formData.email,
+      const registrationData: any = {
         password: formData.password,
         name: formData.name,
-        phone: formData.phone,
         role: formData.userType === 'agent' ? 'agent' : 'user',
         language_preference: locale,
         business_name: formData.userType === 'agent' ? formData.businessName : undefined,
         referral_code: formData.referralCode || undefined
       };
+
+      // Only include email if provided
+      if (formData.email && formData.email.trim()) {
+        registrationData.email = formData.email.trim();
+      }
+
+      // Only include phone if provided
+      if (formData.phone && formData.phone.trim()) {
+        registrationData.phone = formData.phone.trim();
+      }
 
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -267,11 +282,18 @@ const ModernRegisterForm: React.FC<ModernRegisterFormProps> = ({ locale }) => {
           )}
 
           {/* Email and Phone */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email Address
-              </label>
+          <div className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-sm text-blue-800">
+                <strong>Note:</strong> Provide either your email address or phone number (or both). At least one is required.
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                  Email Address <span className="text-gray-500">(Optional)</span>
+                </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Mail className="h-5 w-5 text-gray-400" />
@@ -294,13 +316,13 @@ const ModernRegisterForm: React.FC<ModernRegisterFormProps> = ({ locale }) => {
                   {errors.email}
                 </p>
               )}
-            </div>
+              </div>
 
-            <div className="space-y-2">
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                Phone Number
-              </label>
-              <div className="relative">
+              <div className="space-y-2">
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                  Phone Number <span className="text-gray-500">(Optional)</span>
+                </label>
+                <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Phone className="h-5 w-5 text-gray-400" />
                 </div>
@@ -322,6 +344,7 @@ const ModernRegisterForm: React.FC<ModernRegisterFormProps> = ({ locale }) => {
                   {errors.phone}
                 </p>
               )}
+              </div>
             </div>
           </div>
 

@@ -5,14 +5,42 @@ import { hashPassword, generateToken } from '@/lib/auth';
 import { z } from 'zod';
 
 const registerSchema = z.object({
-  email: z.string().email('Invalid email format'),
+  email: z.string().optional(),
+  phone: z.string().optional(),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   name: z.string().min(1, 'Name is required'),
-  phone: z.string().min(1, 'Phone number is required'),
   role: z.enum(['user', 'agent']).default('user'),
   language_preference: z.enum(['en', 'am', 'ti', 'or']).default('en'),
   business_name: z.string().optional(),
   referral_code: z.string().optional(),
+}).refine((data) => {
+  // Require either email or phone, but not both
+  const hasEmail = data.email && data.email.trim().length > 0;
+  const hasPhone = data.phone && data.phone.trim().length > 0;
+  return hasEmail || hasPhone;
+}, {
+  message: "Either email or phone number is required",
+  path: ["email"] // This will show the error on the email field
+}).refine((data) => {
+  // Validate email format if provided
+  if (data.email && data.email.trim().length > 0) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(data.email);
+  }
+  return true;
+}, {
+  message: "Invalid email format",
+  path: ["email"]
+}).refine((data) => {
+  // Validate phone format if provided
+  if (data.phone && data.phone.trim().length > 0) {
+    const phoneRegex = /^\+?[\d\s\-()]{8,}$/;
+    return phoneRegex.test(data.phone);
+  }
+  return true;
+}, {
+  message: "Invalid phone number format",
+  path: ["phone"]
 });
 
 export async function POST(request: NextRequest) {
@@ -33,13 +61,24 @@ export async function POST(request: NextRequest) {
       referral_code,
     } = validatedData;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return NextResponse.json(
-        { error: 'User with this email already exists' },
-        { status: 400 }
-      );
+    // Check if user already exists (by email or phone)
+    const existingUserQuery = [];
+    if (email && email.trim()) {
+      existingUserQuery.push({ email: email.trim() });
+    }
+    if (phone && phone.trim()) {
+      existingUserQuery.push({ phone: phone.trim() });
+    }
+
+    if (existingUserQuery.length > 0) {
+      const existingUser = await User.findOne({ $or: existingUserQuery });
+      if (existingUser) {
+        const conflictField = existingUser.email === email ? 'email' : 'phone';
+        return NextResponse.json(
+          { error: `User with this ${conflictField} already exists` },
+          { status: 400 }
+        );
+      }
     }
 
     // Validate referral code if provided
@@ -68,14 +107,20 @@ export async function POST(request: NextRequest) {
 
     // Create user
     const userData: any = {
-      email,
       password: hashedPassword,
       name,
-      phone,
       role,
       language_preference,
       referred_by: referral_code || undefined,
     };
+
+    // Add email or phone (whichever was provided)
+    if (email && email.trim()) {
+      userData.email = email.trim();
+    }
+    if (phone && phone.trim()) {
+      userData.phone = phone.trim();
+    }
 
     if (role === 'agent') {
       userData.business_name = business_name;
@@ -90,9 +135,9 @@ export async function POST(request: NextRequest) {
     // Remove password from response
     const userResponse = {
       id: user._id,
-      email: user.email,
+      email: user.email || null,
       name: user.name,
-      phone: user.phone,
+      phone: user.phone || null,
       role: user.role,
       language_preference: user.language_preference,
       referral_code: user.referral_code,
