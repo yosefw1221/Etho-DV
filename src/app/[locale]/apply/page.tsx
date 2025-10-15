@@ -22,8 +22,6 @@ type PersonalInfo = {
   birthCity: string;
   birthCountry: string;
   countryOfEligibility: string;
-  passportNumber: string;
-  passportExpiry: string;
   photo: any;
 };
 
@@ -559,8 +557,6 @@ const getDefaultFormData = (): FormData => ({
     birthCity: '',
     birthCountry: 'Ethiopia',
     countryOfEligibility: 'Ethiopia',
-    passportNumber: '',
-    passportExpiry: '',
     photo: null,
   },
   contactInfo: {
@@ -747,10 +743,6 @@ export default function ApplyPage({ params }: ApplyPageProps) {
           errors.birthCountry = t.validation_required;
         if (!formData.personalInfo.countryOfEligibility)
           errors.countryOfEligibility = t.validation_required;
-        if (!formData.personalInfo.passportNumber.trim())
-          errors.passportNumber = t.validation_required;
-        if (!formData.personalInfo.passportExpiry)
-          errors.passportExpiry = t.validation_required;
         break;
 
       case 2: // Contact Info
@@ -1145,55 +1137,6 @@ export default function ApplyPage({ params }: ApplyPageProps) {
           <option value='Ethiopia'>Ethiopia</option>
           {/* Add more countries as needed */}
         </select>
-      </div>
-
-      {/* Passport Information */}
-      <div className='bg-blue-50 border border-blue-200 rounded-lg p-6'>
-        <h3 className='text-lg font-medium text-blue-900 mb-4'>
-          Passport Information
-        </h3>
-        <div className='grid md:grid-cols-2 gap-4'>
-          <div>
-            <label className='block text-sm font-medium text-gray-700 mb-2'>
-              Passport Number <span className='text-red-500'>*</span>
-            </label>
-            <input
-              type='text'
-              value={formData.personalInfo.passportNumber}
-              onChange={(e) => updatePersonalInfo('passportNumber', e.target.value)}
-              className={`w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
-                validationErrors.passportNumber ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder='EP1234567'
-              required
-            />
-            {validationErrors.passportNumber && (
-              <p className='mt-1 text-sm text-red-600'>
-                {validationErrors.passportNumber}
-              </p>
-            )}
-          </div>
-          <div>
-            <label className='block text-sm font-medium text-gray-700 mb-2'>
-              Passport Expiry Date <span className='text-red-500'>*</span>
-            </label>
-            <input
-              type='date'
-              value={formData.personalInfo.passportExpiry}
-              onChange={(e) => updatePersonalInfo('passportExpiry', e.target.value)}
-              className={`w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
-                validationErrors.passportExpiry ? 'border-red-500' : 'border-gray-300'
-              }`}
-              min={new Date().toISOString().split('T')[0]}
-              required
-            />
-            {validationErrors.passportExpiry && (
-              <p className='mt-1 text-sm text-red-600'>
-                {validationErrors.passportExpiry}
-              </p>
-            )}
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -1962,18 +1905,6 @@ export default function ApplyPage({ params }: ApplyPageProps) {
               {formData.personalInfo.countryOfEligibility || 'Not provided'}
             </p>
           </div>
-          <div>
-            <p className='text-gray-600'>Passport Number:</p>
-            <p className='font-medium'>
-              {formData.personalInfo.passportNumber || 'Not provided'}
-            </p>
-          </div>
-          <div>
-            <p className='text-gray-600'>Passport Expiry:</p>
-            <p className='font-medium'>
-              {formData.personalInfo.passportExpiry || 'Not provided'}
-            </p>
-          </div>
         </div>
         {formData.personalInfo.photo && (
           <div className='mt-4'>
@@ -2271,8 +2202,6 @@ export default function ApplyPage({ params }: ApplyPageProps) {
           place_of_birth: formData.personalInfo.birthCity,
           country_of_birth: formData.personalInfo.birthCountry,
           country_of_eligibility: formData.personalInfo.countryOfEligibility,
-          passport_number: formData.personalInfo.passportNumber,
-          passport_expiry: formData.personalInfo.passportExpiry,
           email: formData.contactInfo.emailAddress,
           phone: formData.contactInfo.phoneNumber || formData.contactInfo.emailAddress, // Phone is required by backend
           address: formData.contactInfo.mailingAddress || 'Not provided', // Address is required by backend
@@ -2296,8 +2225,6 @@ export default function ApplyPage({ params }: ApplyPageProps) {
                 date_of_birth: formData.spouseInfo.birthDate,
                 place_of_birth: formData.spouseInfo.birthCity,
                 country_of_birth: formData.spouseInfo.birthCountry,
-                passport_number: '', // Optional for family members
-                passport_expiry: '', // Optional for family members
               }]
             : []),
           ...formData.children.map((child) => ({
@@ -2309,8 +2236,6 @@ export default function ApplyPage({ params }: ApplyPageProps) {
             date_of_birth: child.birthDate,
             place_of_birth: child.birthCity,
             country_of_birth: child.birthCountry,
-            passport_number: '', // Optional for family members
-            passport_expiry: '', // Optional for family members
           })),
         ],
         photos: [
