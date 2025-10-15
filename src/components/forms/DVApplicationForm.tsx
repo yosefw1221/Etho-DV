@@ -9,7 +9,6 @@ import ContactInfoStep from './ContactInfoStep';
 import BackgroundInfoStep from './BackgroundInfoStep';
 import PhotoUploadStep from './PhotoUploadStep';
 import FamilyInfoStep from './FamilyInfoStep';
-import ReviewStep from './ReviewStep';
 import { DVFormData, FormStep, ValidationError } from '@/types/form';
 import {
   validatePersonalInfo,
@@ -136,9 +135,6 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
       case 5:
         validation = validateFamilyInfo(formData);
         break;
-      case 6:
-        validation = validateCompleteForm(formData);
-        break;
       default:
         return true;
     }
@@ -176,10 +172,13 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
       return; // Prevent navigation
     }
     
-    if (formData.current_step < 6) {
+    if (formData.current_step < 5) {
       // Clear errors before moving to next step
       clearErrors();
       updateFormData({ current_step: formData.current_step + 1 });
+    } else if (formData.current_step === 5) {
+      // On step 5, submit the form directly
+      handleSubmit();
     }
   };
 
@@ -190,7 +189,17 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
   };
 
   const handleSubmit = async () => {
-    if (!validateCurrentStep()) return;
+    // Validate complete form before submission
+    const completeFormValidation = validateCompleteForm(formData);
+    if (!completeFormValidation.isValid) {
+      const errorMap = completeFormValidation.errors.reduce((acc, error) => {
+        acc[error.field] = error.message;
+        return acc;
+      }, {} as Record<string, string>);
+      setErrors(errorMap);
+      alert('Please fix all validation errors before submitting the application.');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -265,8 +274,7 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
       2: t('form.contact_info'),
       3: 'Background Information',
       4: t('form.upload_photo') || 'Upload Photo',
-      5: t('form.family_info'),
-      6: t('form.review')
+      5: t('form.family_info')
     };
     return titles[step as keyof typeof titles] || '';
   };
@@ -289,8 +297,6 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
         return <PhotoUploadStep {...commonProps} />;
       case 5:
         return <FamilyInfoStep {...commonProps} />;
-      case 6:
-        return <ReviewStep {...commonProps} onSubmit={handleSubmit} isSubmitting={isSubmitting} />;
       default:
         return null;
     }
@@ -302,7 +308,7 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
       <div className="mb-8">
         <ProgressBar
           current={formData.current_step}
-          total={6}
+          total={5}
           className="mb-4"
         />
         <div className="text-center">
@@ -348,13 +354,14 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
             </span>
           )}
 
-          {formData.current_step < 6 ? (
+          {formData.current_step <= 5 ? (
             <Button 
               onClick={nextStep} 
               disabled={isSubmitting}
+              loading={isSubmitting}
               className={Object.keys(errors).length > 0 ? 'opacity-75' : ''}
             >
-              {t('form.next')}
+              {formData.current_step === 5 ? t('form.submit') || 'Submit Application' : t('form.next')}
             </Button>
           ) : null}
         </div>
