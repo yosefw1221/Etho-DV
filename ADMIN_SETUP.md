@@ -94,7 +94,14 @@ Login at `/admin` or via API:
 {
   "success": true,
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "admin": { ... }
+  "admin": {
+    "id": "...",
+    "email": "superadmin@example.com",
+    "name": "Super Admin",
+    "role": "super_admin",
+    "permissions": [...],
+    "last_login": "..."
+  }
 }
 ```
 
@@ -124,16 +131,54 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 }
 ```
 
-**Example using cURL**:
+### Complete Example using cURL
+
+**Step 1: Login as Super Admin**
+```bash
+# Save this to a script or run manually
+TOKEN=$(curl -X POST http://localhost:3000/api/admin/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "superadmin@example.com",
+    "password": "your-password"
+  }' | jq -r '.token')
+
+echo "Token: $TOKEN"
+```
+
+**Step 2: Create New Admin**
 ```bash
 curl -X POST http://localhost:3000/api/admin/auth/create \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_SUPER_ADMIN_TOKEN" \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{
     "email": "admin@example.com",
     "password": "admin-password",
     "name": "Admin Name",
     "role": "admin"
+  }'
+```
+
+**Step 3: Create Another Super Admin**
+```bash
+curl -X POST http://localhost:3000/api/admin/auth/create \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "email": "another-superadmin@example.com",
+    "password": "strong-password",
+    "name": "Another Super Admin",
+    "role": "super_admin",
+    "permissions": [
+      "view_forms",
+      "approve_forms",
+      "decline_forms",
+      "complete_forms",
+      "bulk_operations",
+      "view_analytics",
+      "manage_users",
+      "manage_admins"
+    ]
   }'
 ```
 
