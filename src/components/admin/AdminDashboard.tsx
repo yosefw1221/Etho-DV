@@ -18,6 +18,7 @@ import {
   Trash2,
   MoreHorizontal
 } from 'lucide-react';
+import ReferralPayoutManager from './ReferralPayoutManager';
 
 interface FormData {
   id: string;
@@ -43,6 +44,7 @@ interface AdminDashboardProps {
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ locale }) => {
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<'forms' | 'referrals'>('forms');
   const [forms, setForms] = useState<FormData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedForms, setSelectedForms] = useState<string[]>([]);
@@ -204,7 +206,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ locale }) => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-            <p className="text-gray-600 mt-1">Manage DV lottery applications</p>
+            <p className="text-gray-600 mt-1">Manage DV lottery applications and referrals</p>
           </div>
           <div className="flex items-center space-x-4">
             <div className="bg-blue-50 rounded-lg p-3 flex items-center space-x-2">
@@ -216,6 +218,43 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ locale }) => {
           </div>
         </div>
       </div>
+
+      {/* Tabs */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div className="border-b border-gray-200">
+          <nav className="flex -mb-px">
+            <button
+              onClick={() => setActiveTab('forms')}
+              className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'forms'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+              }`}
+            >
+              <FileText className="w-4 h-4 inline-block mr-2" />
+              Application Forms
+            </button>
+            <button
+              onClick={() => setActiveTab('referrals')}
+              className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'referrals'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+              }`}
+            >
+              <DollarSign className="w-4 h-4 inline-block mr-2" />
+              Referral Payouts
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'referrals' ? (
+        <ReferralPayoutManager locale={locale} />
+      ) : (
+        <>
+          {/* Forms Management (existing code) */}
 
       {/* Filters and Search */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
@@ -468,6 +507,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ locale }) => {
         <div className="flex items-center justify-center p-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
+      )}
+        </>
       )}
     </div>
   );
