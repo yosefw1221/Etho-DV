@@ -1,18 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withDBConnection } from '@/middleware/dbConnection';
 import Form from '@/models/Form';
-import { requireAuth } from '@/middleware/auth';
+import { requireAuth, authenticateUser } from '@/middleware/auth';
 import { writeFile } from 'fs/promises';
 import path from 'path';
 import { existsSync, mkdirSync } from 'fs';
 
 async function uploadReceiptHandler(request: NextRequest) {
   try {
-    const userId = (request as any).user.userId;
+    // Check for optional authentication
+    const { user: authUser } = await authenticateUser(request);
+    const userId = authUser?.userId || null;
+
     const formData = await request.formData();
     
     const file = formData.get('receipt') as File;
     const formId = formData.get('formId') as string;
+    const trackingId = formData.get('trackingId') as string; // Optional, for public submissions
 
     if (!file) {
       return NextResponse.json(
@@ -21,9 +25,9 @@ async function uploadReceiptHandler(request: NextRequest) {
       );
     }
 
-    if (!formId) {
+    if (!formId && !trackingId) {
       return NextResponse.json(
-        { error: 'Form ID is required' },
+        { error: 'Form ID or Tracking ID is required' },
         { status: 400 }
       );
     }
@@ -46,8 +50,19 @@ async function uploadReceiptHandler(request: NextRequest) {
       );
     }
 
-    // Find the form and verify ownership
-    const form = await Form.findOne({ _id: formId, user_id: userId });
+    // Find the form - either by formId+userId or by trackingId
+    let form;
+    if (userId && formId) {
+      // Authenticated user with formId
+      form = await Form.findOne({ _id: formId, user_id: userId });
+    } else if (trackingId) {
+      // Public submission with trackingId
+      form = await Form.findOne({ tracking_id: trackingId });
+    } else if (formId) {
+      // Public submission with formId (no user authentication)
+      form = await Form.findOne({ _id: formId, user_id: null });
+    }
+
     if (!form) {
       return NextResponse.json(
         { error: 'Form not found or unauthorized' },
@@ -100,5 +115,6 @@ async function uploadReceiptHandler(request: NextRequest) {
   }
 }
 
-export const POST = withDBConnection(requireAuth(uploadReceiptHandler));
+// No authentication required - public can upload receipts with tracking ID
+export const POST = withDBConnection(uploadReceiptHandler);
 

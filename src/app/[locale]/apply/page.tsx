@@ -660,46 +660,7 @@ export default function ApplyPage({ params }: ApplyPageProps) {
     });
   }, [params]);
 
-  // Check for pending form submission after login
-  useEffect(() => {
-    const checkPendingSubmission = () => {
-      const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
-      const pendingSubmission = localStorage.getItem('pending_form_submission');
-      
-      if (token && pendingSubmission) {
-        try {
-          const { formData: savedFormData, timestamp } = JSON.parse(pendingSubmission);
-          
-          // Check if the saved data is not too old (24 hours)
-          const isRecent = Date.now() - timestamp < 24 * 60 * 60 * 1000;
-          
-          if (isRecent && savedFormData) {
-            // Restore form data
-            setFormData(savedFormData);
-            
-            // Clear the pending submission
-            localStorage.removeItem('pending_form_submission');
-            
-            // Auto-submit the form
-            setTimeout(() => {
-              if (confirm('Your form is ready to submit. Would you like to submit it now?')) {
-                handleSubmit();
-              }
-            }, 1000);
-          } else {
-            // Clear old pending submission
-            localStorage.removeItem('pending_form_submission');
-          }
-        } catch (error) {
-          console.error('Error processing pending submission:', error);
-          localStorage.removeItem('pending_form_submission');
-        }
-      }
-    };
-
-    // Check on component mount
-    checkPendingSubmission();
-  }, [locale]);
+  // No longer needed - public can submit without login
 
   // Auto-save form data with debounce
   useEffect(() => {
@@ -758,10 +719,9 @@ export default function ApplyPage({ params }: ApplyPageProps) {
           errors.countryOfEligibility = t.validation_required;
         break;
 
-      case 2: // Contact Info
-        if (!formData.contactInfo.emailAddress.trim()) {
-          errors.emailAddress = t.validation_required;
-        } else if (
+      case 2: // Contact Info (now optional)
+        // Email is optional, but if provided must be valid
+        if (formData.contactInfo.emailAddress.trim() &&
           !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactInfo.emailAddress)
         ) {
           errors.emailAddress = t.validation_email;
@@ -1267,12 +1227,16 @@ export default function ApplyPage({ params }: ApplyPageProps) {
             value={formData.contactInfo.phoneNumber}
             onChange={(e) => updateContactInfo('phoneNumber', e.target.value)}
             className='w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none'
-            placeholder='+251912345678'
+            placeholder='+251912345678 (optional for notifications)'
           />
+          <p className='mt-1 text-xs text-gray-500'>
+            Optional: Provide your phone number to receive updates about your application
+          </p>
         </div>
         <div>
           <label className='block text-sm font-medium text-gray-700 mb-2'>
-            {t.email_address} <span className='text-red-500'>*</span>
+            {t.email_address}{' '}
+            <span className='text-sm text-gray-600'>({t.optional})</span>
           </label>
           <input
             type='email'
@@ -1283,13 +1247,16 @@ export default function ApplyPage({ params }: ApplyPageProps) {
                 ? 'border-red-500'
                 : 'border-gray-300'
             }`}
-            required
+            placeholder='email@example.com (optional for notifications)'
           />
           {validationErrors.emailAddress && (
             <p className='mt-1 text-sm text-red-600'>
               {validationErrors.emailAddress}
             </p>
           )}
+          <p className='mt-1 text-xs text-gray-500'>
+            Optional: Provide your email to receive updates about your application
+          </p>
         </div>
       </div>
     </div>
@@ -2169,19 +2136,9 @@ export default function ApplyPage({ params }: ApplyPageProps) {
     setIsSubmitting(true);
 
     try {
+      // Get token if user is logged in (optional)
       const token =
         localStorage.getItem('token') || localStorage.getItem('auth_token');
-      if (!token) {
-        // Save form data and redirect URL for after login
-        localStorage.setItem('pending_form_submission', JSON.stringify({
-          formData,
-          returnUrl: `/${locale}/apply`,
-          timestamp: Date.now()
-        }));
-        alert('Please log in first to submit an application.');
-        window.location.href = `/${locale}/login?redirect=${encodeURIComponent(`/${locale}/apply`)}`;
-        return;
-      }
 
       // Map form values to backend expected format
       const mapGender = (gender: string) => {
@@ -2215,9 +2172,9 @@ export default function ApplyPage({ params }: ApplyPageProps) {
           place_of_birth: formData.personalInfo.birthCity,
           country_of_birth: formData.personalInfo.birthCountry,
           country_of_eligibility: formData.personalInfo.countryOfEligibility,
-          email: formData.contactInfo.emailAddress,
-          phone: formData.contactInfo.phoneNumber || formData.contactInfo.emailAddress, // Phone is required by backend
-          address: formData.contactInfo.mailingAddress || 'Not provided', // Address is required by backend
+          email: formData.contactInfo.emailAddress || undefined, // Optional
+          phone: formData.contactInfo.phoneNumber || undefined, // Optional
+          address: formData.contactInfo.mailingAddress || undefined, // Optional
           city: formData.contactInfo.mailingCity,
           state: formData.contactInfo.mailingState,
           postal_code: formData.contactInfo.mailingPostalCode,
@@ -2226,6 +2183,11 @@ export default function ApplyPage({ params }: ApplyPageProps) {
           occupation: formData.educationWork.occupation,
           employer: formData.educationWork.employer,
           marital_status: mapMaritalStatus(formData.maritalStatus),
+        },
+        // Include notification contact separately
+        notification_contact: {
+          email: formData.contactInfo.emailAddress || undefined,
+          phone: formData.contactInfo.phoneNumber || undefined,
         },
         family_members: [
           ...(formData.maritalStatus === 'married' && formData.spouseInfo.firstName
@@ -2260,12 +2222,17 @@ export default function ApplyPage({ params }: ApplyPageProps) {
         ].filter(Boolean),
       };
 
+      // Prepare headers - include Authorization only if token exists
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch('/api/user/submit-form', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers,
         body: JSON.stringify(submissionData),
       });
 
@@ -2316,12 +2283,21 @@ export default function ApplyPage({ params }: ApplyPageProps) {
       const formData = new FormData();
       formData.append('receipt', receiptFile);
       formData.append('formId', submittedFormId);
+      
+      // For public submissions, also include tracking_id
+      if (trackingId) {
+        formData.append('trackingId', trackingId);
+      }
+
+      // Prepare headers - include Authorization only if token exists
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
 
       const response = await fetch('/api/user/upload-receipt', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        headers,
         body: formData,
       });
 

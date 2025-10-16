@@ -25,10 +25,10 @@ export interface IApplicantData {
   country_of_birth: string;
   country_of_eligibility?: string;
 
-  // Contact Information
-  address: string;
-  phone: string;
-  email: string;
+  // Contact Information (optional for public submissions)
+  address?: string;
+  phone?: string;
+  email?: string;
 
   // Documentation
   // passport_number: string;
@@ -42,7 +42,7 @@ export interface IApplicantData {
 }
 
 export interface IForm extends Document {
-  user_id: mongoose.Types.ObjectId;
+  user_id?: mongoose.Types.ObjectId | null; // Optional for public submissions
   applicant_data: IApplicantData;
   family_members: IFamilyMember[];
   photos: string[];
@@ -64,6 +64,9 @@ export interface IForm extends Document {
   transaction_id?: string;
   tracking_id: string;
   admin_notes?: string;
+  // Optional notification contact for public submissions
+  notification_email?: string;
+  notification_phone?: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -159,20 +162,20 @@ const ApplicantDataSchema = new Schema({
     trim: true,
   },
 
-  // Contact Information
+  // Contact Information (optional for public submissions)
   address: {
     type: String,
-    required: true,
+    required: false,
     trim: true,
   },
   phone: {
     type: String,
-    required: true,
+    required: false,
     trim: true,
   },
   email: {
     type: String,
-    required: true,
+    required: false,
     lowercase: true,
     trim: true,
   },
@@ -212,7 +215,8 @@ const FormSchema: Schema = new Schema(
     user_id: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: false, // Optional for public submissions
+      default: null,
     },
     applicant_data: {
       type: ApplicantDataSchema,
@@ -269,6 +273,16 @@ const FormSchema: Schema = new Schema(
     },
     admin_notes: {
       type: String,
+    },
+    // Optional notification contact for public submissions
+    notification_email: {
+      type: String,
+      lowercase: true,
+      trim: true,
+    },
+    notification_phone: {
+      type: String,
+      trim: true,
     },
   },
   {

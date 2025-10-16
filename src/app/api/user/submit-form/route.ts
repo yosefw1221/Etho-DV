@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withDBConnection } from '@/middleware/dbConnection';
 import Form from '@/models/Form';
 import User from '@/models/User';
-import { requireAuth } from '@/middleware/auth';
+import { requireAuth, authenticateUser } from '@/middleware/auth';
 import { z } from 'zod';
 
-// Form submission schema for individual users
+// Form submission schema for public users (no authentication required)
 const formSubmissionSchema = z.object({
   applicant_data: z.object({
     first_name: z.string().min(1, 'First name is required'),
@@ -18,12 +18,8 @@ const formSubmissionSchema = z.object({
     gender: z.enum(['Male', 'Female']),
     country_of_birth: z.string().min(1, 'Country of birth is required'),
     address: z.string().optional(),
-    phone: z.string().min(1, 'Phone number is required'),
-    email: z.string().email('Invalid email format'),
-    // passport_number: z.string().min(1, 'Passport number is required'),
-    // passport_expiry: z
-    //   .string()
-    //   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid passport expiry date'),
+    phone: z.string().optional(), // Made optional for public submissions
+    email: z.string().email('Invalid email format').optional(), // Made optional
     education_level: z.string().min(1, 'Education level is required'),
     occupation: z.string().optional(),
     marital_status: z.enum(['Single', 'Married']),
@@ -41,27 +37,35 @@ const formSubmissionSchema = z.object({
         place_of_birth: z.string().min(1, 'Place of birth is required'),
         gender: z.enum(['Male', 'Female']),
         country_of_birth: z.string().min(1, 'Country of birth is required'),
-        // passport_number: z.string().optional(),
-        // passport_expiry: z.string().optional(),
       })
     )
     .optional(),
   photos: z.array(z.string().url('Invalid photo URL')).optional(),
+  // Optional notification contact (added at the end of form)
+  notification_contact: z.object({
+    email: z.string().email('Invalid email format').optional(),
+    phone: z.string().optional(),
+  }).optional(),
 });
 
 async function submitFormHandler(request: NextRequest) {
   try {
-    const userId = (request as any).user.userId;
+    // Check for optional authentication (for logged-in users)
+    const { user: authUser } = await authenticateUser(request);
+    const userId = authUser?.userId || null;
+
     const body = await request.json();
     const validatedData = formSubmissionSchema.parse(body);
 
-    // Get user info
-    const user = await User.findById(userId);
-    if (!user || user.role === 'agent') {
-      return NextResponse.json(
-        { error: 'This endpoint is for individual users only' },
-        { status: 403 }
-      );
+    // If user is authenticated, verify they're not an agent
+    if (userId) {
+      const user = await User.findById(userId);
+      if (user && user.role === 'agent') {
+        return NextResponse.json(
+          { error: 'This endpoint is for individual users only. Agents should use bulk submission.' },
+          { status: 403 }
+        );
+      }
     }
 
     // Validate business rules
@@ -87,28 +91,36 @@ async function submitFormHandler(request: NextRequest) {
       );
     };
 
+    const trackingId = generateTrackingId();
+
+    // Merge notification contact with applicant data if provided
+    const notificationContact = validatedData.notification_contact || {};
+    const applicantData = {
+      ...validatedData.applicant_data,
+      // Use notification contact if primary contact info is not provided
+      email: validatedData.applicant_data.email || notificationContact.email || undefined,
+      phone: validatedData.applicant_data.phone || notificationContact.phone || undefined,
+      date_of_birth: new Date(validatedData.applicant_data.date_of_birth),
+    };
+
     // Create form with payment information
     const formData = {
-      user_id: userId,
-      applicant_data: {
-        ...validatedData.applicant_data,
-        date_of_birth: new Date(validatedData.applicant_data.date_of_birth),
-        // passport_expiry: new Date(validatedData.applicant_data.passport_expiry),
-      },
+      user_id: userId, // Can be null for public submissions
+      applicant_data: applicantData,
       family_members:
         validatedData.family_members?.map((member) => ({
           ...member,
           date_of_birth: new Date(member.date_of_birth),
-          // passport_expiry: member.passport_expiry
-          //   ? new Date(member.passport_expiry)
-          //   : undefined,
         })) || [],
       photos: validatedData.photos || [],
       payment_amount: 1, // $1 USD for individual users
       payment_currency: 'USD',
       payment_status: 'pending',
       processing_status: 'draft',
-      tracking_id: generateTrackingId(), // Explicitly set tracking_id
+      tracking_id: trackingId,
+      // Store notification preferences
+      notification_email: notificationContact.email,
+      notification_phone: notificationContact.phone,
     };
 
     const form = new Form(formData);
@@ -119,6 +131,7 @@ async function submitFormHandler(request: NextRequest) {
         success: true,
         message: 'Form submitted successfully',
         form_id: form._id.toString(),
+        tracking_id: trackingId,
         payment_required: true,
         payment_amount: 1,
         payment_currency: 'USD',
@@ -198,4 +211,5 @@ function validateBusinessRules(
   return errors;
 }
 
-export const POST = withDBConnection(requireAuth(submitFormHandler));
+// Remove authentication requirement - now open for public submissions
+export const POST = withDBConnection(submitFormHandler);
