@@ -3,6 +3,7 @@ import { withDBConnection } from '@/middleware/dbConnection';
 import Payment from '@/models/Payment';
 import Form from '@/models/Form';
 import { requireAuth } from '@/middleware/auth';
+import { processReferralReward } from '@/lib/referralProcessor';
 import { z } from 'zod';
 
 const verifyPaymentSchema = z.object({
@@ -149,6 +150,17 @@ async function verifyPaymentHandler(request: NextRequest) {
     // Save payment and form
     await payment.save();
     await form.save();
+
+    // Process referral reward if payment was completed (auto-approved for TeleBirr)
+    if (payment.status === 'completed') {
+      try {
+        console.log(`Processing referral reward for form ${form._id}`);
+        await processReferralReward(form._id.toString());
+      } catch (error) {
+        console.error(`Failed to process referral for form ${form._id}:`, error);
+        // Don't fail the payment verification if referral processing fails
+      }
+    }
 
     // Simulate external API call for payment verification
     // In real implementation, you would call TeleBirr/bank APIs here

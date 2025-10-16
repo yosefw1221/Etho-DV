@@ -1,25 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ensureDBConnection } from '@/middleware/dbConnection';
+import { requireRole } from '@/middleware/auth';
 import Form from '@/models/Form';
 import User from '@/models/User';
 import { processReferralReward } from '@/lib/referralProcessor';
-
-// Middleware to check admin permissions
-function requireAdminAuth(handler: Function) {
-  return async (request: NextRequest, ...args: any[]) => {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Admin authentication required' },
-        { status: 401 }
-      );
-    }
-
-    // Add token verification logic here
-    // For now, we'll assume the token is valid
-    return handler(request, ...args);
-  };
-}
 
 async function getFormsHandler(request: NextRequest) {
   try {
@@ -159,5 +143,5 @@ async function updateFormStatusHandler(request: NextRequest) {
   }
 }
 
-export const GET = requireAdminAuth(ensureDBConnection(getFormsHandler));
-export const PUT = requireAdminAuth(ensureDBConnection(updateFormStatusHandler));
+export const GET = ensureDBConnection(requireRole(['admin'])(getFormsHandler));
+export const PUT = ensureDBConnection(requireRole(['admin'])(updateFormStatusHandler));

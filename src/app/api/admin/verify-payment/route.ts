@@ -3,6 +3,7 @@ import { withDBConnection } from '@/middleware/dbConnection';
 import Payment from '@/models/Payment';
 import Form from '@/models/Form';
 import { requireRole } from '@/middleware/auth';
+import { processReferralReward } from '@/lib/referralProcessor';
 import { z } from 'zod';
 
 const verifyPaymentSchema = z.object({
@@ -68,11 +69,21 @@ async function verifyPaymentHandler(request: NextRequest) {
           form.reference_number = generateReferenceNumber();
         }
         form.submitted_at = new Date();
+        await form.save();
+
+        // Process referral reward when payment is verified
+        try {
+          console.log(`Processing referral reward for form ${form._id}`);
+          await processReferralReward(form._id.toString());
+        } catch (error) {
+          console.error(`Failed to process referral for form ${form._id}:`, error);
+          // Don't fail the payment verification if referral processing fails
+        }
       } else {
         form.payment_status = 'failed';
         form.processing_status = 'draft';
+        await form.save();
       }
-      await form.save();
     }
 
     // Log verification action

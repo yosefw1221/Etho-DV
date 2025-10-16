@@ -58,7 +58,7 @@ const UserSchema: Schema = new Schema(
     role: {
       type: String,
       enum: ['user', 'agent', 'admin', 'operator'],
-      default: 'user',
+      required: true,
     },
     language_preference: {
       type: String,

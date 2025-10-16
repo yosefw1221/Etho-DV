@@ -9,7 +9,7 @@ const registerSchema = z.object({
   phone: z.string().optional(),
   password: z.string().min(4, 'Password must be at least 4 characters'),
   name: z.string().min(1, 'Name is required'),
-  role: z.enum(['user', 'agent']).default('user'),
+  role: z.enum(['user', 'agent']),
   language_preference: z.enum(['en', 'am', 'ti', 'or']).default('en'),
   business_name: z.string().optional(),
   referral_code: z.string().optional(),
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     const userData: any = {
       password: hashedPassword,
       name,
-      role,
+      role, // Explicitly set role from validated input
       language_preference,
       referred_by: referral_code || undefined,
     };
@@ -124,10 +124,16 @@ export async function POST(request: NextRequest) {
 
     if (role === 'agent') {
       userData.business_name = business_name;
+      // Set agent-specific defaults
+      userData.total_submissions = 0;
+      userData.current_tier = 'bronze';
+      userData.discount_rate = 100;
     }
 
+    console.log(`Creating user with role: ${role}`, userData);
     const user = new User(userData);
     await user.save();
+    console.log(`User created successfully with role: ${user.role}, ID: ${user._id}`);
 
     // Generate token
     const token = generateToken(user as any);

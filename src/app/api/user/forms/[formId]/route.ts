@@ -8,15 +8,21 @@ async function getFormDetailsHandler(
   { params }: { params: { formId: string } }
 ) {
   try {
-
     const userId = (request as any).user.userId;
+    const userRole = (request as any).user.role;
     const { formId } = params;
 
-    // Find the form and verify ownership
-    const form = await Form.findOne({
-      _id: formId,
-      user_id: userId
-    });
+    // Admin can access all forms, others can only access their own
+    let form;
+    if (userRole === 'admin') {
+      form = await Form.findById(formId);
+    } else {
+      // Regular users and agents can only access their own forms
+      form = await Form.findOne({
+        _id: formId,
+        user_id: userId
+      });
+    }
 
     if (!form) {
       return NextResponse.json(
@@ -63,12 +69,11 @@ async function updateFormHandler(
   { params }: { params: { formId: string } }
 ) {
   try {
-
     const userId = (request as any).user.userId;
     const { formId } = params;
     const body = await request.json();
 
-    // Find the form and verify ownership
+    // Find the form and verify ownership (only owner can update their own forms)
     const form = await Form.findOne({
       _id: formId,
       user_id: userId

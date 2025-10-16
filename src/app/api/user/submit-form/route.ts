@@ -78,14 +78,14 @@ async function submitFormHandler(request: NextRequest) {
     }
 
     // Generate tracking ID
-    function generateTrackingId(): string {
+    const generateTrackingId = (): string => {
       return (
         'TRK-' +
         Date.now() +
         '-' +
         Math.random().toString(36).substring(2, 8).toUpperCase()
       );
-    }
+    };
 
     // Create form with payment information
     const formData = {

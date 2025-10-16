@@ -3,6 +3,7 @@ import { withDBConnection } from '@/middleware/dbConnection';
 import Form from '@/models/Form';
 import Payment from '@/models/Payment';
 import { requireAuth } from '@/middleware/auth';
+import { processReferralReward } from '@/lib/referralProcessor';
 import { z } from 'zod';
 
 const paymentSchema = z.object({
@@ -75,6 +76,15 @@ async function processPaymentHandler(
     form.reference_number = generateReferenceNumber();
     form.submitted_at = new Date();
     await form.save();
+
+    // Process referral reward when payment is completed
+    try {
+      console.log(`Processing referral reward for form ${form._id}`);
+      await processReferralReward(form._id.toString());
+    } catch (error) {
+      console.error(`Failed to process referral for form ${form._id}:`, error);
+      // Don't fail the payment if referral processing fails
+    }
 
     return NextResponse.json({
       success: true,
