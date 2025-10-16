@@ -17,6 +17,7 @@ import {
   Trash2,
   MoreHorizontal
 } from 'lucide-react';
+import FormDetailModal from './FormDetailModal';
 
 interface FormData {
   id: string;
@@ -52,6 +53,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ locale }) => {
   const [bulkStatus, setBulkStatus] = useState('');
   const [bulkNotes, setBulkNotes] = useState('');
   const [completionDocument, setCompletionDocument] = useState<File | null>(null);
+  const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
+  const [showFormDetail, setShowFormDetail] = useState(false);
 
   useEffect(() => {
     fetchForms();
@@ -101,6 +104,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ locale }) => {
     } else {
       setSelectedForms(forms.map(form => form.id));
     }
+  };
+
+  const handleViewForm = (formId: string) => {
+    setSelectedFormId(formId);
+    setShowFormDetail(true);
+  };
+
+  const handleCloseFormDetail = () => {
+    setShowFormDetail(false);
+    setSelectedFormId(null);
   };
 
   const handleBulkStatusUpdate = async () => {
@@ -414,10 +427,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ locale }) => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-2">
-                      <button className="text-blue-600 hover:text-blue-800">
+                      <button 
+                        onClick={() => handleViewForm(form.id)}
+                        className="text-blue-600 hover:text-blue-800 transition-colors"
+                        title="View Details"
+                      >
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button className="text-gray-600 hover:text-gray-800">
+                      <button className="text-gray-600 hover:text-gray-800 transition-colors">
                         <MoreHorizontal className="w-4 h-4" />
                       </button>
                     </div>
@@ -458,6 +475,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ locale }) => {
         <div className="flex items-center justify-center p-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
+      )}
+
+      {/* Form Detail Modal */}
+      {selectedFormId && (
+        <FormDetailModal
+          formId={selectedFormId}
+          isOpen={showFormDetail}
+          onClose={handleCloseFormDetail}
+        />
       )}
     </div>
   );
