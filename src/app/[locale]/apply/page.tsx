@@ -8,6 +8,8 @@ import {
   CheckIcon,
 } from '@heroicons/react/24/outline';
 import PhotoUploadWithCrop from '@/components/forms/PhotoUploadWithCrop';
+import BankReceiptUpload from '@/components/forms/BankReceiptUpload';
+import SubmissionSuccessModal from '@/components/forms/SubmissionSuccessModal';
 
 type ApplyPageProps = {
   params: Promise<{ locale: string }>;
@@ -619,6 +621,17 @@ export default function ApplyPage({ params }: ApplyPageProps) {
     [key: string]: string;
   }>({});
   const [isAutoSaving, setIsAutoSaving] = useState(false);
+  
+  // Receipt upload states
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [isUploadingReceipt, setIsUploadingReceipt] = useState(false);
+  const [receiptUploadError, setReceiptUploadError] = useState('');
+  const [submittedFormId, setSubmittedFormId] = useState<string>('');
+  const [trackingId, setTrackingId] = useState<string>('');
+  
+  // Success modal states
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Calculate age from birth date
   const calculateAge = (birthDate: string): number => {
@@ -2263,15 +2276,16 @@ export default function ApplyPage({ params }: ApplyPageProps) {
       }
 
       if (result.success) {
+        // Store form ID for receipt upload
+        setSubmittedFormId(result.form_id);
+        
         // Clear saved form data on successful submission
         localStorage.removeItem('dv_form_draft');
         localStorage.removeItem('dv_form_step');
         localStorage.removeItem('pending_form_submission');
         
-        alert(
-          `${t.success_title}\n${t.confirmation_number}: ${result.form_id}`
-        );
-        window.location.href = `/${locale}/dashboard`;
+        // Show receipt upload modal instead of redirecting
+        setShowReceiptModal(true);
       } else {
         throw new Error(result.error || 'Unknown error occurred');
       }
@@ -2285,6 +2299,72 @@ export default function ApplyPage({ params }: ApplyPageProps) {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleReceiptUpload = async () => {
+    if (!receiptFile || !submittedFormId) {
+      setReceiptUploadError('Please select a receipt file');
+      return;
+    }
+
+    setIsUploadingReceipt(true);
+    setReceiptUploadError('');
+
+    try {
+      const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+      
+      const formData = new FormData();
+      formData.append('receipt', receiptFile);
+      formData.append('formId', submittedFormId);
+
+      const response = await fetch('/api/user/upload-receipt', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Receipt upload failed');
+      }
+
+      if (result.success) {
+        // Store tracking ID
+        setTrackingId(result.tracking_id);
+        
+        // Close receipt modal and show success modal
+        setShowReceiptModal(false);
+        setShowSuccessModal(true);
+      } else {
+        throw new Error(result.error || 'Unknown error occurred');
+      }
+    } catch (error) {
+      console.error('Error uploading receipt:', error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Error uploading receipt. Please try again.';
+      setReceiptUploadError(errorMessage);
+    } finally {
+      setIsUploadingReceipt(false);
+    }
+  };
+
+  const handleReceiptFileUpload = (file: File) => {
+    setReceiptFile(file);
+    setReceiptUploadError('');
+  };
+
+  const handleReceiptFileRemove = () => {
+    setReceiptFile(null);
+  };
+
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
+    window.location.href = `/${locale}/dashboard`;
   };
 
   const renderCurrentStep = () => {
@@ -2402,6 +2482,69 @@ export default function ApplyPage({ params }: ApplyPageProps) {
           )}
         </div>
       </div>
+
+      {/* Receipt Upload Modal */}
+      {showReceiptModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          {/* Backdrop */}
+          <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+
+          {/* Modal */}
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8">
+              {/* Content */}
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                  Upload Payment Receipt
+                </h2>
+                <p className="text-gray-600">
+                  Please upload your bank payment receipt to complete your application.
+                </p>
+              </div>
+
+              <BankReceiptUpload
+                onUpload={handleReceiptFileUpload}
+                onRemove={handleReceiptFileRemove}
+                uploadedFile={receiptFile}
+                isUploading={isUploadingReceipt}
+                error={receiptUploadError}
+              />
+
+              {/* Action Buttons */}
+              <div className="mt-6 flex space-x-3">
+                <button
+                  onClick={handleReceiptUpload}
+                  disabled={!receiptFile || isUploadingReceipt}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-medium hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isUploadingReceipt ? (
+                    <>
+                      <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Uploading...
+                    </>
+                  ) : (
+                    'Submit Receipt'
+                  )}
+                </button>
+              </div>
+
+              <div className="mt-4 text-center">
+                <p className="text-xs text-gray-500">
+                  Note: Your application won't be processed until the payment receipt is verified.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      <SubmissionSuccessModal
+        isOpen={showSuccessModal}
+        onClose={handleSuccessModalClose}
+        trackingId={trackingId}
+        locale={locale}
+      />
     </div>
   );
 }

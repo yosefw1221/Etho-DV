@@ -269,12 +269,44 @@ export default function HomePage({ params }: HomePageProps) {
   const router = useRouter();
   const [locale, setLocale] = useState('en');
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
     params.then(({ locale: paramLocale }) => {
       setLocale(paramLocale);
     });
   }, [params]);
+
+  useEffect(() => {
+    // Check if user is authenticated
+    const checkAuth = () => {
+      const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+      const userData = localStorage.getItem('user');
+      
+      if (token && userData) {
+        setIsAuthenticated(true);
+        // Redirect to dashboard if authenticated
+        try {
+          const user = JSON.parse(userData);
+          if (user.role === 'agent') {
+            router.push(`/${locale}/agent`);
+          } else if (user.role === 'admin') {
+            router.push(`/${locale}/admin`);
+          } else {
+            router.push(`/${locale}/dashboard`);
+          }
+        } catch (e) {
+          console.error('Error parsing user data:', e);
+          setIsCheckingAuth(false);
+        }
+      } else {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    checkAuth();
+  }, [locale, router]);
 
   const t = content[locale as keyof typeof content] || content.en;
 
@@ -290,10 +322,76 @@ export default function HomePage({ params }: HomePageProps) {
     router.push(`/${newLocale}`);
   };
 
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Language Selector - Floating */}
-      <div className="fixed top-6 right-6 z-50">
+      {/* Header Navigation */}
+      <header className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b border-gray-200 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center">
+              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Etho-DV
+              </h1>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              {/* Language Selector */}
+              <div className="relative">
+                <button
+                  onClick={() => setIsLanguageOpen(!isLanguageOpen)}
+                  className="flex items-center space-x-2 bg-white px-4 py-2 rounded-full shadow-sm hover:shadow-md transition-all border border-gray-200"
+                >
+                  <span className="text-lg">{languages.find(l => l.code === locale)?.flag}</span>
+                  <span className="font-medium text-gray-700 text-sm">{languages.find(l => l.code === locale)?.name}</span>
+                  <ChevronDownIcon className={`w-4 h-4 text-gray-500 transition-transform ${isLanguageOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isLanguageOpen && (
+                  <div className="absolute top-14 right-0 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden w-48 animate-in fade-in slide-in-from-top-2">
+                    {languages.map((lang) => (
+                      <button
+                        key={lang.code}
+                        onClick={() => changeLanguage(lang.code)}
+                        className={`w-full flex items-center space-x-3 px-4 py-3 hover:bg-blue-50 transition-colors ${
+                          locale === lang.code ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
+                        }`}
+                      >
+                        <span className="text-xl">{lang.flag}</span>
+                        <span className="font-medium">{lang.name}</span>
+                        {locale === lang.code && (
+                          <CheckCircleIcon className="w-5 h-5 ml-auto text-blue-600" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Login Button */}
+              <Link
+                href={`/${locale}/login`}
+                className="px-5 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full font-medium text-sm hover:shadow-lg transition-all"
+              >
+                Login
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Language Selector - Floating (Removed, now in header) */}
+      <div className="hidden fixed top-6 right-6 z-50">
         <div className="relative">
           <button
             onClick={() => setIsLanguageOpen(!isLanguageOpen)}
@@ -327,7 +425,7 @@ export default function HomePage({ params }: HomePageProps) {
       </div>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-20 pb-16 px-4 sm:px-6 lg:px-8">
+      <section className="relative overflow-hidden pt-32 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-4xl mx-auto">
             <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6">
