@@ -77,6 +77,16 @@ async function submitFormHandler(request: NextRequest) {
       );
     }
 
+    // Generate tracking ID
+    function generateTrackingId(): string {
+      return (
+        'TRK-' +
+        Date.now() +
+        '-' +
+        Math.random().toString(36).substring(2, 8).toUpperCase()
+      );
+    }
+
     // Create form with payment information
     const formData = {
       user_id: userId,
@@ -98,6 +108,7 @@ async function submitFormHandler(request: NextRequest) {
       payment_currency: 'USD',
       payment_status: 'pending',
       processing_status: 'draft',
+      tracking_id: generateTrackingId(), // Explicitly set tracking_id
     };
 
     const form = new Form(formData);

@@ -7,19 +7,19 @@ export interface IUser extends Document {
   phone?: string;
   role: 'user' | 'agent' | 'admin' | 'operator';
   language_preference: 'en' | 'am' | 'ti' | 'or';
-  
+
   // Referral system fields
   referral_code: string;
   referred_by?: string;
   referral_earnings: number;
   total_referrals: number;
-  
+
   // Agent-specific fields
   business_name?: string;
   total_submissions?: number;
   current_tier?: 'bronze' | 'silver' | 'gold';
   discount_rate?: number;
-  
+
   created_at: Date;
   updated_at: Date;
 }
@@ -65,12 +65,11 @@ const UserSchema: Schema = new Schema(
       enum: ['en', 'am', 'ti', 'or'],
       default: 'en',
     },
-    
+
     // Referral system fields
     referral_code: {
       type: String,
       required: false,
-      unique: true,
       sparse: true, // Allow multiple null values for unique constraint
       trim: true,
     },
@@ -87,7 +86,7 @@ const UserSchema: Schema = new Schema(
       type: Number,
       default: 0,
     },
-    
+
     // Agent-specific fields
     business_name: {
       type: String,
@@ -131,7 +130,7 @@ UserSchema.pre('save', function (next) {
   if (this.isNew && !this.referral_code) {
     this.referral_code = generateReferralCode();
   }
-  
+
   // Update tier and discount rate based on total submissions
   if (this.role === 'agent' && this.isModified('total_submissions')) {
     const submissions = Number(this.total_submissions) || 0;
@@ -151,7 +150,7 @@ UserSchema.pre('save', function (next) {
 });
 
 // Indexes for better performance
-UserSchema.index({ referral_code: 1 });
+UserSchema.index({ referral_code: 1 }, { unique: true, sparse: true });
 UserSchema.index({ referred_by: 1 });
 
 export default mongoose.models.User ||

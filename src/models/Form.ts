@@ -9,8 +9,8 @@ export interface IFamilyMember {
   place_of_birth: string;
   gender: 'Male' | 'Female';
   country_of_birth: string;
-// passport_number?: string;
-  passport_expiry?: Date;
+  // passport_number?: string;
+  // passport_expiry?: Date;
   photo_url?: string;
 }
 
@@ -24,16 +24,16 @@ export interface IApplicantData {
   gender: 'Male' | 'Female';
   country_of_birth: string;
   country_of_eligibility?: string;
-  
+
   // Contact Information
   address: string;
   phone: string;
   email: string;
-  
+
   // Documentation
-// passport_number: string;
-  passport_expiry: Date;
-  
+  // passport_number: string;
+  // passport_expiry: Date;
+
   // Background
   education_level: string;
   occupation?: string;
@@ -47,7 +47,14 @@ export interface IForm extends Document {
   family_members: IFamilyMember[];
   photos: string[];
   payment_status: 'pending' | 'paid' | 'failed';
-  processing_status: 'draft' | 'submitted' | 'processing' | 'approved' | 'declined' | 'completed' | 'failed';
+  processing_status:
+    | 'draft'
+    | 'submitted'
+    | 'processing'
+    | 'approved'
+    | 'declined'
+    | 'completed'
+    | 'failed';
   confirmation_document_url?: string;
   completion_document_url?: string;
   bank_receipt_url?: string;
@@ -65,51 +72,51 @@ const FamilyMemberSchema = new Schema({
   relationship_type: {
     type: String,
     enum: ['spouse', 'child'],
-    required: true
+    required: true,
   },
   first_name: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
   },
   middle_name: {
     type: String,
-    trim: true
+    trim: true,
   },
   last_name: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
   },
   date_of_birth: {
     type: Date,
-    required: true
+    required: true,
   },
   place_of_birth: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
   },
   gender: {
     type: String,
     enum: ['Male', 'Female'],
-    required: true
+    required: true,
   },
   country_of_birth: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
   },
   // passport_number: {
   //   type: String,
   //   trim: true
   // },
-  passport_expiry: {
-    type: Date
-  },
+  // passport_expiry: {
+  //   type: Date,
+  // },
   photo_url: {
-    type: String
-  }
+    type: String,
+  },
 });
 
 const ApplicantDataSchema = new Schema({
@@ -117,151 +124,166 @@ const ApplicantDataSchema = new Schema({
   first_name: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
   },
   middle_name: {
     type: String,
-    trim: true
+    trim: true,
   },
   last_name: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
   },
   date_of_birth: {
     type: Date,
-    required: true
+    required: true,
   },
   place_of_birth: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
   },
   gender: {
     type: String,
     enum: ['Male', 'Female'],
-    required: true
+    required: true,
   },
   country_of_birth: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
   },
   country_of_eligibility: {
     type: String,
-    trim: true
+    trim: true,
   },
-  
+
   // Contact Information
   address: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
   },
   phone: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
   },
   email: {
     type: String,
     required: true,
     lowercase: true,
-    trim: true
+    trim: true,
   },
-  
+
   // Documentation
   // passport_number: {
   //   type: String,
   //   required: true,
   //   trim: true
   // },
-  passport_expiry: {
-    type: Date,
-    required: true
-  },
-  
+  // // passport_expiry: {
+  //     type: Date,
+  //     required: true,
+  //   },
+
   // Background
   education_level: {
     type: String,
-    required: true
+    required: true,
   },
   occupation: {
     type: String,
-    trim: true
+    trim: true,
   },
   photo_url: {
-    type: String
+    type: String,
   },
   marital_status: {
     type: String,
     enum: ['Single', 'Married'],
-    required: true
-  }
+    required: true,
+  },
 });
 
-const FormSchema: Schema = new Schema({
-  user_id: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+const FormSchema: Schema = new Schema(
+  {
+    user_id: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    applicant_data: {
+      type: ApplicantDataSchema,
+      required: true,
+    },
+    family_members: [FamilyMemberSchema],
+    photos: [String],
+    payment_status: {
+      type: String,
+      enum: ['pending', 'paid', 'failed'],
+      default: 'pending',
+    },
+    processing_status: {
+      type: String,
+      enum: [
+        'draft',
+        'submitted',
+        'processing',
+        'approved',
+        'declined',
+        'completed',
+        'failed',
+      ],
+      default: 'draft',
+    },
+    confirmation_document_url: {
+      type: String,
+    },
+    completion_document_url: {
+      type: String,
+    },
+    bank_receipt_url: {
+      type: String,
+    },
+    bank_receipt_verified: {
+      type: Boolean,
+      default: false,
+    },
+    payment_amount: {
+      type: Number,
+      required: true,
+    },
+    payment_currency: {
+      type: String,
+      required: true,
+      default: 'USD',
+    },
+    transaction_id: {
+      type: String,
+    },
+    tracking_id: {
+      type: String,
+      required: true,
+    },
+    admin_notes: {
+      type: String,
+    },
   },
-  applicant_data: {
-    type: ApplicantDataSchema,
-    required: true
-  },
-  family_members: [FamilyMemberSchema],
-  photos: [String],
-  payment_status: {
-    type: String,
-    enum: ['pending', 'paid', 'failed'],
-    default: 'pending'
-  },
-  processing_status: {
-    type: String,
-    enum: ['draft', 'submitted', 'processing', 'approved', 'declined', 'completed', 'failed'],
-    default: 'draft'
-  },
-  confirmation_document_url: {
-    type: String
-  },
-  completion_document_url: {
-    type: String
-  },
-  bank_receipt_url: {
-    type: String
-  },
-  bank_receipt_verified: {
-    type: Boolean,
-    default: false
-  },
-  payment_amount: {
-    type: Number,
-    required: true
-  },
-  payment_currency: {
-    type: String,
-    required: true,
-    default: 'USD'
-  },
-  transaction_id: {
-    type: String
-  },
-  tracking_id: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  admin_notes: {
-    type: String
+  {
+    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
   }
-}, {
-  timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
-});
+);
 
 // Generate tracking ID
 function generateTrackingId(): string {
-  return 'TRK-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+  return (
+    'TRK-' +
+    Date.now() +
+    '-' +
+    Math.random().toString(36).substring(2, 8).toUpperCase()
+  );
 }
 
 // Pre-save hook to generate tracking ID
@@ -276,6 +298,7 @@ FormSchema.pre('save', function (next) {
 FormSchema.index({ user_id: 1, created_at: -1 });
 FormSchema.index({ payment_status: 1 });
 FormSchema.index({ processing_status: 1 });
-FormSchema.index({ tracking_id: 1 });
+FormSchema.index({ tracking_id: 1 }, { unique: true });
 
-export default mongoose.models.Form || mongoose.model<IForm>('Form', FormSchema);
+export default mongoose.models.Form ||
+  mongoose.model<IForm>('Form', FormSchema);

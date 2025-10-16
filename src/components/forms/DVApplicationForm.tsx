@@ -44,8 +44,8 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
       address: '',
       phone: '',
       email: '',
-      passport_number: '',
-      passport_expiry: '',
+// passport_number: '',
+// passport_expiry: '',
     },
     background_info: {
       education_level: '',
@@ -222,8 +222,8 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
             address: formData.contact_info.address,
             phone: formData.contact_info.phone,
             email: formData.contact_info.email,
-            passport_number: formData.contact_info.passport_number,
-            passport_expiry: formData.contact_info.passport_expiry,
+// passport_number: formData.contact_info.passport_number,
+// passport_expiry: formData.contact_info.passport_expiry,
             education_level: formData.background_info.education_level,
             occupation: formData.background_info.occupation,
             marital_status: formData.background_info.marital_status
@@ -237,8 +237,8 @@ const DVApplicationForm: React.FC<DVApplicationFormProps> = ({
             place_of_birth: member.place_of_birth,
             gender: member.gender,
             country_of_birth: member.country_of_birth,
-            passport_number: member.passport_number || '',
-            passport_expiry: member.passport_expiry || ''
+// passport_number: member.passport_number || '',
+// passport_expiry: member.passport_expiry || ''
           })),
           // Primary photo from background_info.photo
           primary_photo: formData.background_info.photo

@@ -26,8 +26,8 @@ const mockFormData: DVFormData = {
     address: '123 Main Street, Addis Ababa, Ethiopia',
     phone: '+251912345678',
     email: 'john.doe@example.com',
-    passport_number: 'ET1234567',
-    passport_expiry: '2025-12-31',
+    // passport_number: 'ET1234567',
+    // passport_expiry: '2025-12-31',
   },
   background_info: {
     education_level: 'university_degree',
@@ -126,7 +126,7 @@ describe('Validation Functions', () => {
         ...mockFormData,
         contact_info: {
           ...mockFormData.contact_info,
-          passport_expiry: '2020-01-01', // Expired
+          // passport_expiry: '2020-01-01', // Expired
         },
       };
       const result = validateContactInfo(invalidData);

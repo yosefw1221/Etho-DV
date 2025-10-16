@@ -40,7 +40,7 @@ const ContactInfoStep: React.FC<ContactInfoStepProps> = ({
 
   const getHelpContent = (field: string) => {
     const helpTexts: Record<string, string> = {
-      passport_number: t('help.passport_number'),
+// passport_number: t('help.passport_number'),
       phone: 'Enter your phone number with country code (e.g., +251912345678)',
       address: 'Enter your complete current mailing address including street, city, and postal code',
     };

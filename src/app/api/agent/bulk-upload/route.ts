@@ -22,10 +22,10 @@ const csvRowSchema = z.object({
   address: z.string().optional(),
   phone: z.string().min(8, 'Phone number is required'),
   email: z.string().email('Invalid email format'),
-  passport_number: z.string().min(1, 'Passport number is required'),
-  passport_expiry: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid passport expiry date format'),
+  // passport_number: z.string().min(1, 'Passport number is required'),
+  // passport_expiry: z
+  //   .string()
+  //   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid passport expiry date format'),
   education_level: z.string().min(1, 'Education level is required'),
   occupation: z.string().optional(),
   marital_status: z.enum(['Single', 'Married'], {
@@ -321,8 +321,8 @@ async function createFormFromRowData(
     address: rowData.address,
     phone: rowData.phone,
     email: rowData.email,
-    passport_number: rowData.passport_number,
-    passport_expiry: new Date(rowData.passport_expiry),
+    // passport_number: rowData.passport_number,
+    // passport_expiry: new Date(rowData.passport_expiry),
     education_level: rowData.education_level,
     occupation: rowData.occupation || '',
     marital_status: rowData.marital_status,
@@ -345,10 +345,10 @@ async function createFormFromRowData(
         (rowData.gender === 'Male' ? 'Female' : 'Male'),
       country_of_birth:
         rowData.spouse_country_of_birth || rowData.country_of_birth,
-      passport_number: rowData.spouse_passport_number || '',
-      passport_expiry: rowData.spouse_passport_expiry
-        ? new Date(rowData.spouse_passport_expiry)
-        : undefined,
+      // passport_number: rowData.spouse_passport_number || '',
+      // passport_expiry: rowData.spouse_passport_expiry
+      // ? new Date(rowData.spouse_passport_expiry)
+      // : undefined,
     });
   }
 

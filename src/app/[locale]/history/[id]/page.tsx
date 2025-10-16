@@ -21,8 +21,8 @@ const content = {
     email: 'Email',
     phone: 'Phone',
     address: 'Address',
-    passport_number: 'Passport Number',
-    passport_expiry: 'Passport Expiry',
+// passport_number: 'Passport Number',
+// passport_expiry: 'Passport Expiry',
     payment_info: 'Payment Information',
     payment_status: 'Payment Status',
     amount: 'Amount',
@@ -219,14 +219,14 @@ export default function HistoryDetailsPage({ params }: HistoryDetailsPageProps) 
                 <label className="text-sm font-medium text-gray-500">{t.address}</label>
                 <p className="text-gray-900">{application.applicant_data.address}</p>
               </div>
-              <div>
+              {/* <div>
                 <label className="text-sm font-medium text-gray-500">{t.passport_number}</label>
                 <p className="text-gray-900 font-mono">{application.applicant_data.passport_number}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">{t.passport_expiry}</label>
                 <p className="text-gray-900">{application.applicant_data.passport_expiry}</p>
-              </div>
+              </div> */}
             </div>
           </div>
         )}

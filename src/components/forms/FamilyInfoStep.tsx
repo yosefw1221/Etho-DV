@@ -39,8 +39,8 @@ const FamilyInfoStep: React.FC<FamilyInfoStepProps> = ({
       place_of_birth: '',
       gender: '',
       country_of_birth: '',
-      passport_number: '',
-      passport_expiry: '',
+// passport_number: '',
+// passport_expiry: '',
     };
 
     updateData({
@@ -59,8 +59,8 @@ const FamilyInfoStep: React.FC<FamilyInfoStepProps> = ({
       place_of_birth: '',
       gender: '',
       country_of_birth: '',
-      passport_number: '',
-      passport_expiry: '',
+// passport_number: '',
+// passport_expiry: '',
     };
 
     updateData({
@@ -100,8 +100,8 @@ const FamilyInfoStep: React.FC<FamilyInfoStepProps> = ({
           place_of_birth: '',
           gender: '',
           country_of_birth: '',
-          passport_number: '',
-          passport_expiry: '',
+// passport_number: '',
+// passport_expiry: '',
         });
       }
     } else if (clampedNum < currentChildren.length) {

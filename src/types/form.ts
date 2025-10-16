@@ -13,8 +13,8 @@ export interface ContactInfo {
   address: string;
   phone: string;
   email: string;
-  passport_number: string;
-  passport_expiry: string;
+  // passport_number: string;
+  // passport_expiry: string;
 }
 
 export interface PhotoData {
@@ -40,8 +40,8 @@ export interface FamilyMember {
   place_of_birth: string;
   gender: 'Male' | 'Female' | '';
   country_of_birth: string;
-  passport_number?: string;
-  passport_expiry?: string;
+  // passport_number?: string;
+  // passport_expiry?: string;
   photo?: File;
 }
 
@@ -81,7 +81,7 @@ export const EDUCATION_LEVELS = [
   { value: 'some_university', label: 'Some university courses' },
   { value: 'university_degree', label: 'University degree' },
   { value: 'some_graduate', label: 'Some graduate level courses' },
-  { value: 'masters_degree', label: 'Master\'s degree' },
+  { value: 'masters_degree', label: "Master's degree" },
   { value: 'some_doctorate', label: 'Some doctorate level courses' },
   { value: 'doctorate_degree', label: 'Doctorate degree' },
 ];

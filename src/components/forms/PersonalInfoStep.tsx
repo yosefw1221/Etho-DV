@@ -47,7 +47,7 @@ const PersonalInfoStep: React.FC<PersonalInfoStepProps> = ({
 
   const getHelpContent = (field: string) => {
     const helpTexts: Record<string, string> = {
-      passport_number: t('help.passport_number'),
+// passport_number: t('help.passport_number'),
       date_of_birth: t('help.date_format'),
       place_of_birth: t('help.place_of_birth'),
     };
