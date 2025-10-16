@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withDBConnection } from '@/middleware/dbConnection';
 import Payment from '@/models/Payment';
 import Form from '@/models/Form';
-import { requireRole } from '@/middleware/auth';
+import { requireAdmin, AuthenticatedAdminRequest } from '@/middleware/adminAuth';
 import { processReferralReward } from '@/lib/referralProcessor';
 import { z } from 'zod';
 
@@ -13,10 +13,10 @@ const verifyPaymentSchema = z.object({
   verified_amount: z.number().optional(),
 });
 
-async function verifyPaymentHandler(request: NextRequest) {
+async function verifyPaymentHandler(request: AuthenticatedAdminRequest) {
   try {
 
-    const adminId = (request as any).user.userId;
+    const adminId = request.admin?.id;
     const body = await request.json();
     const validatedData = verifyPaymentSchema.parse(body);
 
@@ -129,4 +129,4 @@ function generateReferenceNumber(): string {
   return `DV${year}${timestamp}${random}`;
 }
 
-export const POST = withDBConnection(requireRole(['admin', 'operator'])(verifyPaymentHandler));
+export const POST = withDBConnection(requireAdmin(verifyPaymentHandler));

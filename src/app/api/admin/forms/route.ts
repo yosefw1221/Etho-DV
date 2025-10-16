@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ensureDBConnection } from '@/middleware/dbConnection';
-import { requireRole } from '@/middleware/auth';
+import { requireAdmin, AuthenticatedAdminRequest } from '@/middleware/adminAuth';
 import Form from '@/models/Form';
 import User from '@/models/User';
 import { processReferralReward } from '@/lib/referralProcessor';
 
-async function getFormsHandler(request: NextRequest) {
+async function getFormsHandler(request: AuthenticatedAdminRequest) {
   try {
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = parseInt(url.searchParams.get('limit') || '20');
     const status = url.searchParams.get('status');
     const search = url.searchParams.get('search');
-    
+
     const skip = (page - 1) * limit;
 
     // Build query
@@ -25,7 +25,7 @@ async function getFormsHandler(request: NextRequest) {
         { tracking_id: { $regex: search, $options: 'i' } },
         { 'applicant_data.first_name': { $regex: search, $options: 'i' } },
         { 'applicant_data.last_name': { $regex: search, $options: 'i' } },
-        { 'applicant_data.email': { $regex: search, $options: 'i' } }
+        { 'applicant_data.email': { $regex: search, $options: 'i' } },
       ];
     }
 
@@ -56,7 +56,7 @@ async function getFormsHandler(request: NextRequest) {
       bank_receipt_verified: form.bank_receipt_verified,
       completion_document_url: form.completion_document_url,
       admin_notes: form.admin_notes,
-      updated_at: form.updated_at
+      updated_at: form.updated_at,
     }));
 
     return NextResponse.json({
@@ -67,9 +67,9 @@ async function getFormsHandler(request: NextRequest) {
           page,
           limit,
           total: totalCount,
-          pages: Math.ceil(totalCount / limit)
-        }
-      }
+          pages: Math.ceil(totalCount / limit),
+        },
+      },
     });
   } catch (error) {
     console.error('Get forms error:', error);
@@ -80,7 +80,7 @@ async function getFormsHandler(request: NextRequest) {
   }
 }
 
-async function updateFormStatusHandler(request: NextRequest) {
+async function updateFormStatusHandler(request: AuthenticatedAdminRequest) {
   try {
     const body = await request.json();
     const { formIds, status, adminNotes, completionDocumentUrl } = body;
@@ -102,7 +102,7 @@ async function updateFormStatusHandler(request: NextRequest) {
     // Update forms
     const updateData: any = {
       processing_status: status,
-      updated_at: new Date()
+      updated_at: new Date(),
     };
 
     if (adminNotes) {
@@ -113,10 +113,7 @@ async function updateFormStatusHandler(request: NextRequest) {
       updateData.completion_document_url = completionDocumentUrl;
     }
 
-    const result = await Form.updateMany(
-      { _id: { $in: formIds } },
-      updateData
-    );
+    const result = await Form.updateMany({ _id: { $in: formIds } }, updateData);
 
     // Process referral rewards for approved forms
     if (status === 'approved') {
@@ -124,7 +121,10 @@ async function updateFormStatusHandler(request: NextRequest) {
         try {
           await processReferralReward(formId);
         } catch (error) {
-          console.error(`Failed to process referral for form ${formId}:`, error);
+          console.error(
+            `Failed to process referral for form ${formId}:`,
+            error
+          );
         }
       }
     }
@@ -132,7 +132,7 @@ async function updateFormStatusHandler(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: `Updated ${result.modifiedCount} form(s)`,
-      updated_count: result.modifiedCount
+      updated_count: result.modifiedCount,
     });
   } catch (error) {
     console.error('Update form status error:', error);
@@ -143,5 +143,5 @@ async function updateFormStatusHandler(request: NextRequest) {
   }
 }
 
-export const GET = ensureDBConnection(requireRole(['admin'])(getFormsHandler));
-export const PUT = ensureDBConnection(requireRole(['admin'])(updateFormStatusHandler));
+export const GET = ensureDBConnection(requireAdmin(getFormsHandler));
+export const PUT = ensureDBConnection(requireAdmin(updateFormStatusHandler));

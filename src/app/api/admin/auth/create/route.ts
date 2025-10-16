@@ -64,7 +64,7 @@ async function createAdminHandler(request: NextRequest) {
           { status: 403 }
         );
       }
-      
+
       // For initial setup, enforce super_admin role creation
       if (role !== 'super_admin') {
         return NextResponse.json(
@@ -75,7 +75,7 @@ async function createAdminHandler(request: NextRequest) {
           { status: 400 }
         );
       }
-      
+
       isAuthorized = true;
     } else {
       // Case 2: Super admins exist - require authentication

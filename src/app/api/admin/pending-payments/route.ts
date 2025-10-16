@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import Payment from '@/models/Payment';
 import Form from '@/models/Form';
 import User from '@/models/User';
-import { requireRole } from '@/middleware/auth';
+import { requireAdmin, AuthenticatedAdminRequest } from '@/middleware/adminAuth';
 import { withDBConnection } from '@/middleware/dbConnection';
 
-async function getPendingPaymentsHandler(request: NextRequest) {
+async function getPendingPaymentsHandler(request: AuthenticatedAdminRequest) {
   try {
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1');
@@ -87,6 +87,4 @@ async function getPendingPaymentsHandler(request: NextRequest) {
   }
 }
 
-export const GET = withDBConnection(
-  requireRole(['admin', 'operator'])(getPendingPaymentsHandler)
-);
+export const GET = withDBConnection(requireAdmin(getPendingPaymentsHandler));
