@@ -19,6 +19,7 @@ export interface IUser extends Document {
   total_submissions?: number;
   current_tier?: 'bronze' | 'silver' | 'gold';
   discount_rate?: number;
+  commission_earned?: number; // Total commission earned by agent (20 ETB per completed form)
 
   created_at: Date;
   updated_at: Date;
@@ -104,6 +105,10 @@ const UserSchema: Schema = new Schema(
       default: 'bronze',
     },
     discount_rate: {
+      type: Number,
+      default: 0,
+    },
+    commission_earned: {
       type: Number,
       default: 0,
     },

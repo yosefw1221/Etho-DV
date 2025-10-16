@@ -31,17 +31,11 @@ async function getFormDetailsHandler(
       // Applicant Information
       applicant_data: formData.applicant_data,
       
-      // Contact Information
-      contact_info: formData.contact_info,
-      
-      // Background Information
-      background_info: formData.background_info,
-      
-      // Family Information
-      family_info: formData.family_info,
+      // Family Members (spouse and children with photos)
+      family_members: formData.family_members || [],
       
       // Photos
-      photo_url: formData.photo_url,
+      photo_url: formData.applicant_data?.photo_url || formData.photo_url,
       
       // User Information
       user_id: formData.user_id?._id?.toString(),

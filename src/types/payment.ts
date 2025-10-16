@@ -104,19 +104,14 @@ export const PAYMENT_METHODS: PaymentMethod[] = [
 
 export const getPaymentAmount = (userType: 'individual' | 'agent', formCount: number = 1): number => {
   if (userType === 'individual') {
-    return 1; // $1 USD for individuals
+    return 300; // 300 ETB for individuals (controlled in database)
   }
   
-  // Agent pricing in ETB
-  if (formCount >= 50) {
-    return 50 * formCount; // 50 ETB per form for 50+ forms
-  } else if (formCount >= 11) {
-    return 75 * formCount; // 75 ETB per form for 11-49 forms
-  } else {
-    return 100 * formCount; // 100 ETB per form for 1-10 forms
-  }
+  // Agent pricing: flat 300 ETB per form
+  // Agents get 20 ETB commission back per completed form
+  return 300 * formCount; // 300 ETB per form
 };
 
 export const getCurrency = (userType: 'individual' | 'agent'): string => {
-  return userType === 'individual' ? 'USD' : 'ETB';
+  return 'ETB'; // All payments in ETB
 };

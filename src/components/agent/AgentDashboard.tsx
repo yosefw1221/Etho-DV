@@ -121,12 +121,15 @@ const AgentDashboard: React.FC<AgentDashboardProps> = ({ stats, locale }) => {
               <span className="text-sm font-medium text-gray-700">
                 Current Rate: {stats.discount_rate} ETB per form
               </span>
-              {tierProgress.next && (
-                <span className="text-sm text-gray-500">
-                  {tierProgress.formsNeeded} forms to {tierProgress.next.name}
-                </span>
-              )}
+              <span className="text-sm font-medium text-green-700">
+                Commission: 20 ETB per completed form
+              </span>
             </div>
+            {tierProgress.next && (
+              <div className="text-sm text-gray-500 mb-2">
+                {tierProgress.formsNeeded} forms to {tierProgress.next.name}
+              </div>
+            )}
             
             {tierProgress.next && (
               <div className="w-full bg-gray-200 rounded-full h-2">
@@ -186,16 +189,16 @@ const AgentDashboard: React.FC<AgentDashboardProps> = ({ stats, locale }) => {
           color="green"
         />
         <StatCard
-          title="Success Rate"
-          value={`${Math.round((stats.completed_submissions / Math.max(stats.total_submissions, 1)) * 100)}%`}
-          subtitle={`${stats.completed_submissions} completed`}
-          icon="✅"
+          title="Commission Earned"
+          value={`${stats.commission_earned || 0} ETB`}
+          subtitle={`${stats.completed_submissions} × 20 ETB`}
+          icon="💵"
           color="green"
         />
         <StatCard
           title="Total Revenue"
           value={formatCurrency(stats.total_revenue, 'ETB')}
-          subtitle="Earnings"
+          subtitle="Paid to platform"
           icon="💰"
           color="purple"
         />

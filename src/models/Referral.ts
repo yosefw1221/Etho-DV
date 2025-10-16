@@ -7,6 +7,11 @@ export interface IReferral extends Document {
   reward_amount: number;
   reward_status: 'pending' | 'paid' | 'cancelled';
   reward_date?: Date;
+  payout_status: 'none' | 'requested' | 'approved' | 'paid' | 'rejected';
+  payout_amount?: number;
+  payout_requested_at?: Date;
+  payout_processed_at?: Date;
+  payout_notes?: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -39,6 +44,23 @@ const ReferralSchema: Schema = new Schema({
   },
   reward_date: {
     type: Date
+  },
+  payout_status: {
+    type: String,
+    enum: ['none', 'requested', 'approved', 'paid', 'rejected'],
+    default: 'none'
+  },
+  payout_amount: {
+    type: Number
+  },
+  payout_requested_at: {
+    type: Date
+  },
+  payout_processed_at: {
+    type: Date
+  },
+  payout_notes: {
+    type: String
   }
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

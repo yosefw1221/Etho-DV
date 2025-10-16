@@ -14,6 +14,27 @@ interface UserStats {
   last_submission_date?: string;
 }
 
+interface ReferralStats {
+  referral_code: string;
+  total_referrals: number;
+  total_earnings: number;
+  pending_earnings: number;
+  paid_earnings: number;
+  remaining_limit: number;
+  referrals: Array<{
+    id: string;
+    referred_user: {
+      name: string;
+      email: string;
+    };
+    form_status: string;
+    tracking_id: string;
+    reward_amount: number;
+    reward_status: string;
+    created_at: string;
+  }>;
+}
+
 interface UserDashboardProps {
   user: {
     id: string;
@@ -27,9 +48,78 @@ interface UserDashboardProps {
 
 const UserDashboard: React.FC<UserDashboardProps> = ({ user, stats, locale }) => {
   const t = useTranslations();
+  const [referralStats, setReferralStats] = React.useState<ReferralStats | null>(null);
+  const [isLoadingReferrals, setIsLoadingReferrals] = React.useState(true);
+  const [payoutLoading, setPayoutLoading] = React.useState(false);
+  const [payoutMessage, setPayoutMessage] = React.useState<{type: 'success' | 'error', text: string} | null>(null);
 
   const createLocalizedPath = (path: string) => 
     locale === 'en' ? path : `/${locale}${path}`;
+
+  // Fetch referral stats
+  React.useEffect(() => {
+    const fetchReferralStats = async () => {
+      try {
+        const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+        const response = await fetch('/api/user/referrals', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setReferralStats(data.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch referral stats:', error);
+      } finally {
+        setIsLoadingReferrals(false);
+      }
+    };
+
+    fetchReferralStats();
+  }, []);
+
+  const handleRequestPayout = async () => {
+    if (!referralStats || referralStats.total_earnings <= 0) {
+      setPayoutMessage({ type: 'error', text: 'No earnings available for payout' });
+      return;
+    }
+
+    setPayoutLoading(true);
+    setPayoutMessage(null);
+
+    try {
+      const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+      const response = await fetch('/api/user/referrals/request-payout', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setPayoutMessage({ 
+          type: 'success', 
+          text: `Payout request submitted! Amount: ${data.data.payout_amount} ETB` 
+        });
+        // Refresh referral stats
+        setTimeout(() => window.location.reload(), 2000);
+      } else {
+        setPayoutMessage({ type: 'error', text: data.error || 'Failed to request payout' });
+      }
+    } catch (error) {
+      console.error('Payout request error:', error);
+      setPayoutMessage({ type: 'error', text: 'Failed to request payout' });
+    } finally {
+      setPayoutLoading(false);
+    }
+  };
 
   const statCards = [
     {
@@ -232,6 +322,95 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user, stats, locale }) =>
             </div>
           </div>
 
+          {/* Referral Stats */}
+          <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-green-900 mb-4">
+              💰 Referral Earnings
+            </h3>
+            {isLoadingReferrals ? (
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+              </div>
+            ) : referralStats ? (
+              <div className="space-y-3">
+                <div className="bg-white rounded-lg p-3 border border-green-200">
+                  <div className="text-xs text-gray-600 mb-1">Your Referral Code</div>
+                  <div className="text-lg font-bold text-green-900 font-mono">
+                    {referralStats.referral_code}
+                  </div>
+                </div>
+                <div className="space-y-2 text-sm text-green-800">
+                  <div className="flex justify-between">
+                    <span>Total Referrals:</span>
+                    <span className="font-medium">{referralStats.total_referrals}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Total Earnings:</span>
+                    <span className="font-medium">{referralStats.total_earnings} ETB</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Pending:</span>
+                    <span className="font-medium text-yellow-700">{referralStats.pending_earnings} ETB</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Paid:</span>
+                    <span className="font-medium text-green-700">{referralStats.paid_earnings} ETB</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-600">
+                    <span>Limit Remaining:</span>
+                    <span>{referralStats.remaining_limit} ETB / 10,000 ETB</span>
+                  </div>
+                </div>
+                
+                {payoutMessage && (
+                  <div className={`p-3 rounded-lg ${
+                    payoutMessage.type === 'success' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {payoutMessage.text}
+                  </div>
+                )}
+                
+                {referralStats.total_earnings > 0 && (
+                  <button
+                    onClick={handleRequestPayout}
+                    disabled={payoutLoading}
+                    className="w-full mt-3 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {payoutLoading ? 'Processing...' : 'Request Payout'}
+                  </button>
+                )}
+                
+                {referralStats.referrals.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-green-200">
+                    <div className="text-xs font-medium text-green-900 mb-2">Recent Referrals</div>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {referralStats.referrals.slice(0, 5).map(ref => (
+                        <div key={ref.id} className="text-xs bg-white rounded p-2 border border-green-100">
+                          <div className="font-medium text-gray-900">{ref.referred_user.name}</div>
+                          <div className="text-gray-600 flex justify-between">
+                            <span>{ref.reward_amount} ETB</span>
+                            <span className={cn(
+                              'font-medium',
+                              ref.reward_status === 'paid' ? 'text-green-600' : 'text-yellow-600'
+                            )}>
+                              {ref.reward_status}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-sm text-green-800">
+                Failed to load referral stats
+              </div>
+            )}
+          </div>
+
           {/* DV Program Info */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
             <h3 className="text-lg font-semibold text-blue-900 mb-4">
@@ -248,7 +427,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user, stats, locale }) =>
               </div>
               <div className="flex justify-between">
                 <span>Application Fee:</span>
-                <span className="font-medium">$1 USD</span>
+                <span className="font-medium">300 ETB</span>
               </div>
             </div>
             <div className="mt-4 pt-4 border-t border-blue-200">

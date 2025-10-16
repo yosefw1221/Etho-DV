@@ -14,6 +14,16 @@ export async function processReferralReward(formId: string) {
       throw new Error('Form not found');
     }
 
+    // Process agent commission if user is an agent
+    if (form.user_id) {
+      const formUser = await User.findById(form.user_id).session(session);
+      if (formUser && formUser.role === 'agent' && form.processing_status === 'completed') {
+        // Credit 20 ETB commission per completed form
+        formUser.commission_earned = (formUser.commission_earned || 0) + 20;
+        await formUser.save({ session });
+      }
+    }
+
     const referredUser = await User.findById(form.user_id).session(session);
     if (!referredUser || !referredUser.referred_by) {
       // No referral to process

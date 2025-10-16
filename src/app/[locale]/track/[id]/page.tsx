@@ -6,14 +6,45 @@ import { Search, FileText, Clock, CheckCircle, XCircle, Download, AlertCircle, C
 
 interface ApplicationData {
   tracking_id: string;
-  applicant_name: string;
+  applicant_data: {
+    first_name: string;
+    middle_name?: string;
+    last_name: string;
+    date_of_birth: string;
+    place_of_birth: string;
+    gender: string;
+    country_of_birth: string;
+    country_of_eligibility?: string;
+    address?: string;
+    phone?: string;
+    email?: string;
+    education_level: string;
+    occupation?: string;
+    marital_status: string;
+    photo_url?: string;
+  };
+  family_members: Array<{
+    relationship_type: string;
+    first_name: string;
+    middle_name?: string;
+    last_name: string;
+    date_of_birth: string;
+    place_of_birth: string;
+    gender: string;
+    country_of_birth: string;
+    photo_url?: string;
+  }>;
+  photos: string[];
   submission_date: string;
   processing_status: string;
   payment_status: string;
+  payment_amount: number;
+  payment_currency: string;
   completion_document_url?: string;
   admin_notes?: string;
   created_at: string;
   updated_at: string;
+  submitted_at?: string;
 }
 
 export default function TrackApplicationPage() {
@@ -222,7 +253,9 @@ export default function TrackApplicationPage() {
                     <User className="w-5 h-5 text-gray-400" />
                     <div>
                       <p className="text-sm text-gray-600">Applicant Name</p>
-                      <p className="font-medium text-gray-900">{applicationData.applicant_name}</p>
+                      <p className="font-medium text-gray-900">
+                        {`${applicationData.applicant_data.first_name} ${applicationData.applicant_data.middle_name || ''} ${applicationData.applicant_data.last_name}`.trim()}
+                      </p>
                     </div>
                   </div>
 
@@ -233,9 +266,27 @@ export default function TrackApplicationPage() {
                       <p className="font-medium text-gray-900">{applicationData.tracking_id}</p>
                     </div>
                   </div>
+
+                  <div className="flex items-center space-x-3">
+                    <User className="w-5 h-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-600">Gender</p>
+                      <p className="font-medium text-gray-900">{applicationData.applicant_data.gender}</p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <Calendar className="w-5 h-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-600">Date of Birth</p>
+                      <p className="font-medium text-gray-900">
+                        {new Date(applicationData.applicant_data.date_of_birth).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+
                   <div className="flex items-center space-x-3">
                     <Calendar className="w-5 h-5 text-gray-400" />
                     <div>
@@ -264,6 +315,139 @@ export default function TrackApplicationPage() {
                 </p>
               </div>
             </div>
+
+            {/* Personal Information */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-600">Country of Birth</p>
+                  <p className="font-medium text-gray-900">{applicationData.applicant_data.country_of_birth}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Place of Birth</p>
+                  <p className="font-medium text-gray-900">{applicationData.applicant_data.place_of_birth}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Education Level</p>
+                  <p className="font-medium text-gray-900">{applicationData.applicant_data.education_level}</p>
+                </div>
+                {applicationData.applicant_data.occupation && (
+                  <div>
+                    <p className="text-gray-600">Occupation</p>
+                    <p className="font-medium text-gray-900">{applicationData.applicant_data.occupation}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-gray-600">Marital Status</p>
+                  <p className="font-medium text-gray-900">{applicationData.applicant_data.marital_status}</p>
+                </div>
+                {applicationData.applicant_data.email && (
+                  <div>
+                    <p className="text-gray-600">Email</p>
+                    <p className="font-medium text-gray-900">{applicationData.applicant_data.email}</p>
+                  </div>
+                )}
+                {applicationData.applicant_data.phone && (
+                  <div>
+                    <p className="text-gray-600">Phone</p>
+                    <p className="font-medium text-gray-900">{applicationData.applicant_data.phone}</p>
+                  </div>
+                )}
+                {applicationData.applicant_data.address && (
+                  <div className="md:col-span-2">
+                    <p className="text-gray-600">Address</p>
+                    <p className="font-medium text-gray-900">{applicationData.applicant_data.address}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Main Applicant Photo */}
+            {applicationData.applicant_data.photo_url && (
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Main Applicant Photo</h3>
+                <div className="flex justify-center">
+                  <img 
+                    src={applicationData.applicant_data.photo_url} 
+                    alt="Main Applicant" 
+                    className="max-w-sm rounded-lg border-2 border-gray-300 shadow-md"
+                  />
+                </div>
+                <div className="mt-4 text-center">
+                  <a 
+                    href={applicationData.applicant_data.photo_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-800"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download Photo</span>
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {/* Family Members */}
+            {applicationData.family_members && applicationData.family_members.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Family Members</h3>
+                <div className="space-y-6">
+                  {applicationData.family_members.map((member, index) => (
+                    <div key={index} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <h4 className="font-medium text-gray-900">
+                            {`${member.first_name} ${member.middle_name || ''} ${member.last_name}`.trim()}
+                          </h4>
+                          <p className="text-sm text-gray-600 capitalize">{member.relationship_type}</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-gray-600">Gender</p>
+                          <p className="font-medium text-gray-900">{member.gender}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Date of Birth</p>
+                          <p className="font-medium text-gray-900">
+                            {new Date(member.date_of_birth).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Country of Birth</p>
+                          <p className="font-medium text-gray-900">{member.country_of_birth}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Place of Birth</p>
+                          <p className="font-medium text-gray-900">{member.place_of_birth}</p>
+                        </div>
+                      </div>
+                      {member.photo_url && (
+                        <div className="mt-4 flex justify-center">
+                          <div className="text-center">
+                            <img 
+                              src={member.photo_url} 
+                              alt={`${member.first_name} ${member.last_name}`}
+                              className="max-w-xs rounded-lg border-2 border-gray-300 shadow-md mb-2"
+                            />
+                            <a 
+                              href={member.photo_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-800 text-sm"
+                            >
+                              <Download className="w-3 h-3" />
+                              <span>Download Photo</span>
+                            </a>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Admin Notes */}
             {applicationData.admin_notes && (

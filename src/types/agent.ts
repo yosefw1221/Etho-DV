@@ -4,6 +4,7 @@ export interface AgentStats {
   pending_submissions: number;
   failed_submissions: number;
   total_revenue: number;
+  commission_earned: number; // 20 ETB per completed form
   current_tier: 'bronze' | 'silver' | 'gold';
   discount_rate: number;
   this_month_submissions: number;
@@ -56,21 +57,23 @@ export const AGENT_TIERS: AgentTier[] = [
   {
     name: 'bronze',
     min_submissions: 0,
-    rate_per_form: 100, // ETB
+    rate_per_form: 300, // ETB (agents pay 300 ETB, get 20 ETB commission back)
     benefits: [
       'Basic support',
       'Standard processing time',
-      '100 ETB per form'
+      '300 ETB per form',
+      '20 ETB commission per completed form'
     ]
   },
   {
     name: 'silver',
     min_submissions: 11,
-    rate_per_form: 75, // ETB
+    rate_per_form: 300, // ETB
     benefits: [
       'Priority support',
       'Faster processing',
-      '75 ETB per form',
+      '300 ETB per form',
+      '20 ETB commission per completed form',
       'Bulk upload tools'
     ],
     next_tier: {
@@ -82,11 +85,12 @@ export const AGENT_TIERS: AgentTier[] = [
   {
     name: 'gold',
     min_submissions: 50,
-    rate_per_form: 50, // ETB
+    rate_per_form: 300, // ETB
     benefits: [
       'VIP support',
       'Fastest processing',
-      '50 ETB per form',
+      '300 ETB per form',
+      '20 ETB commission per completed form',
       'Advanced analytics',
       'Custom solutions'
     ]

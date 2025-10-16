@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withDBConnection } from '@/middleware/dbConnection';
 import Form from '@/models/Form';
 import Payment from '@/models/Payment';
+import User from '@/models/User';
 import { requireRole } from '@/middleware/auth';
 import { AgentStats } from '@/types/agent';
 
@@ -39,16 +40,20 @@ async function getAgentStatsHandler(request: NextRequest) {
       new Date(f.created_at) >= thisMonth
     ).length;
 
+    // Get agent user data for commission tracking
+    const agentUser = await User.findById(userId);
+    const commissionEarned = agentUser?.commission_earned || 0;
+
     // Determine current tier based on total submissions
     let currentTier: 'bronze' | 'silver' | 'gold' = 'bronze';
-    let discountRate = 100; // Default ETB per form
+    let discountRate = 300; // Flat 300 ETB per form
     
     if (totalSubmissions >= 50) {
       currentTier = 'gold';
-      discountRate = 50;
+      discountRate = 300;
     } else if (totalSubmissions >= 11) {
       currentTier = 'silver';
-      discountRate = 75;
+      discountRate = 300;
     }
 
     // Calculate average processing time (mock data for now)
@@ -56,6 +61,7 @@ async function getAgentStatsHandler(request: NextRequest) {
 
     const stats: AgentStats = {
       total_submissions: totalSubmissions,
+      commission_earned: commissionEarned,
       completed_submissions: completedSubmissions,
       pending_submissions: pendingSubmissions,
       failed_submissions: failedSubmissions,

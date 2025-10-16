@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Search, 
   Filter, 
@@ -17,7 +18,6 @@ import {
   Trash2,
   MoreHorizontal
 } from 'lucide-react';
-import FormDetailModal from './FormDetailModal';
 
 interface FormData {
   id: string;
@@ -42,6 +42,7 @@ interface AdminDashboardProps {
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ locale }) => {
+  const router = useRouter();
   const [forms, setForms] = useState<FormData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedForms, setSelectedForms] = useState<string[]>([]);
@@ -53,8 +54,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ locale }) => {
   const [bulkStatus, setBulkStatus] = useState('');
   const [bulkNotes, setBulkNotes] = useState('');
   const [completionDocument, setCompletionDocument] = useState<File | null>(null);
-  const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
-  const [showFormDetail, setShowFormDetail] = useState(false);
 
   useEffect(() => {
     fetchForms();
@@ -107,13 +106,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ locale }) => {
   };
 
   const handleViewForm = (formId: string) => {
-    setSelectedFormId(formId);
-    setShowFormDetail(true);
-  };
-
-  const handleCloseFormDetail = () => {
-    setShowFormDetail(false);
-    setSelectedFormId(null);
+    router.push(`/${locale}/admin/forms/${formId}`);
   };
 
   const handleBulkStatusUpdate = async () => {
@@ -475,15 +468,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ locale }) => {
         <div className="flex items-center justify-center p-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
-      )}
-
-      {/* Form Detail Modal */}
-      {selectedFormId && (
-        <FormDetailModal
-          formId={selectedFormId}
-          isOpen={showFormDetail}
-          onClose={handleCloseFormDetail}
-        />
       )}
     </div>
   );
