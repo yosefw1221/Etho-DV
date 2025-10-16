@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ensureDBConnection } from '@/middleware/dbConnection';
 import AdminUser from '@/models/AdminUser';
-import { hashPassword, generateToken } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -39,13 +39,17 @@ async function adminLoginHandler(request: NextRequest) {
     adminUser.last_login = new Date();
     await adminUser.save();
 
-    // Generate token - create a user-like object for token generation
-    const userForToken = {
-      _id: adminUser._id,
-      email: adminUser.email,
-      role: 'admin' as const
-    } as any;
-    const token = generateToken(userForToken);
+    // Generate token with admin role
+    const token = jwt.sign(
+      {
+        userId: adminUser._id.toString(),
+        email: adminUser.email,
+        role: adminUser.role,
+        isAdmin: true
+      },
+      process.env.NEXTAUTH_SECRET || 'your-secret-key',
+      { expiresIn: '7d' }
+    );
 
     // Remove password from response
     const adminResponse = {

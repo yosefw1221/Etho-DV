@@ -39,7 +39,10 @@ async function createAdminHandler(request: NextRequest) {
     const { email, password, name, role, permissions } = validatedData;
 
     // Count existing super admins
-    const superAdminCount = await AdminUser.countDocuments({ role: 'super_admin', is_active: true });
+    const superAdminCount = await AdminUser.countDocuments({
+      role: 'super_admin',
+      is_active: true,
+    });
 
     // Authorization logic
     let isAuthorized = false;
@@ -50,9 +53,16 @@ async function createAdminHandler(request: NextRequest) {
       // Allow creation with setup secret or if creating regular admin
       if (role === 'super_admin') {
         // Require setup secret for first super admin
-        if (!SUPER_ADMIN_SECRET || !setupSecret || setupSecret !== SUPER_ADMIN_SECRET) {
+        if (
+          !SUPER_ADMIN_SECRET ||
+          !setupSecret ||
+          setupSecret !== SUPER_ADMIN_SECRET
+        ) {
           return NextResponse.json(
-            { error: 'Invalid or missing setup secret. Set SUPER_ADMIN_SECRET environment variable.' },
+            {
+              error:
+                'Invalid or missing setup secret. Set SUPER_ADMIN_SECRET environment variable.',
+            },
             { status: 403 }
           );
         }
@@ -71,10 +81,10 @@ async function createAdminHandler(request: NextRequest) {
       const token = authHeader.substring(7);
       try {
         const decoded = jwt.verify(token, JWT_SECRET) as any;
-        
+
         // Get the requesting admin user
         requestingAdmin = await AdminUser.findById(decoded.userId);
-        
+
         if (!requestingAdmin || !requestingAdmin.is_active) {
           return NextResponse.json(
             { error: 'Unauthorized. Invalid admin credentials.' },
@@ -93,7 +103,10 @@ async function createAdminHandler(request: NextRequest) {
         // Only super admins can create other super admins
         if (role === 'super_admin' && requestingAdmin.role !== 'super_admin') {
           return NextResponse.json(
-            { error: 'Forbidden. Only super admins can create other super admins.' },
+            {
+              error:
+                'Forbidden. Only super admins can create other super admins.',
+            },
             { status: 403 }
           );
         }
