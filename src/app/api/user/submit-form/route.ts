@@ -42,10 +42,12 @@ const formSubmissionSchema = z.object({
     .optional(),
   photos: z.array(z.string().url('Invalid photo URL')).optional(),
   // Optional notification contact (added at the end of form)
-  notification_contact: z.object({
-    email: z.string().email('Invalid email format').optional(),
-    phone: z.string().optional(),
-  }).optional(),
+  notification_contact: z
+    .object({
+      email: z.string().email('Invalid email format').optional(),
+      phone: z.string().optional(),
+    })
+    .optional(),
 });
 
 async function submitFormHandler(request: NextRequest) {
@@ -56,17 +58,6 @@ async function submitFormHandler(request: NextRequest) {
 
     const body = await request.json();
     const validatedData = formSubmissionSchema.parse(body);
-
-    // If user is authenticated, verify they're not an agent
-    if (userId) {
-      const user = await User.findById(userId);
-      if (user && user.role === 'agent') {
-        return NextResponse.json(
-          { error: 'This endpoint is for individual users only. Agents should use bulk submission.' },
-          { status: 403 }
-        );
-      }
-    }
 
     // Validate business rules
     const validationErrors = validateBusinessRules(validatedData);
@@ -98,8 +89,14 @@ async function submitFormHandler(request: NextRequest) {
     const applicantData = {
       ...validatedData.applicant_data,
       // Use notification contact if primary contact info is not provided
-      email: validatedData.applicant_data.email || notificationContact.email || undefined,
-      phone: validatedData.applicant_data.phone || notificationContact.phone || undefined,
+      email:
+        validatedData.applicant_data.email ||
+        notificationContact.email ||
+        undefined,
+      phone:
+        validatedData.applicant_data.phone ||
+        notificationContact.phone ||
+        undefined,
       date_of_birth: new Date(validatedData.applicant_data.date_of_birth),
     };
 
