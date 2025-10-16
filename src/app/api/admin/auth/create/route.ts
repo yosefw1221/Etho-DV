@@ -38,7 +38,7 @@ async function createAdminHandler(request: NextRequest) {
 
     const { email, password, name, role, permissions } = validatedData;
 
-    // Count existing super admins
+    // Count existing admin users
     const superAdminCount = await AdminUser.countDocuments({
       role: 'super_admin',
       is_active: true,
@@ -50,23 +50,32 @@ async function createAdminHandler(request: NextRequest) {
 
     // Case 1: Initial setup - no super admins exist
     if (superAdminCount === 0) {
-      // Allow creation with setup secret or if creating regular admin
-      if (role === 'super_admin') {
-        // Require setup secret for first super admin
-        if (
-          !SUPER_ADMIN_SECRET ||
-          !setupSecret ||
-          setupSecret !== SUPER_ADMIN_SECRET
-        ) {
-          return NextResponse.json(
-            {
-              error:
-                'Invalid or missing setup secret. Set SUPER_ADMIN_SECRET environment variable.',
-            },
-            { status: 403 }
-          );
-        }
+      // ALWAYS require setup secret when no super admins exist (initial setup only)
+      if (
+        !SUPER_ADMIN_SECRET ||
+        !setupSecret ||
+        setupSecret !== SUPER_ADMIN_SECRET
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              'System setup required. Provide X-Setup-Secret header with SUPER_ADMIN_SECRET value.',
+          },
+          { status: 403 }
+        );
       }
+      
+      // For initial setup, enforce super_admin role creation
+      if (role !== 'super_admin') {
+        return NextResponse.json(
+          {
+            error:
+              'Initial setup requires creating a super admin. Set role to "super_admin".',
+          },
+          { status: 400 }
+        );
+      }
+      
       isAuthorized = true;
     } else {
       // Case 2: Super admins exist - require authentication
