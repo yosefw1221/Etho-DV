@@ -4,9 +4,10 @@ import Form from '@/models/Form';
 
 async function trackApplicationHandler(
   request: NextRequest,
-  { params }: { params: { trackingId: string } }
+  context: { params: Promise<{ trackingId: string }> }
 ) {
   try {
+    const params = await context.params;
     const { trackingId } = params;
 
     if (!trackingId) {
@@ -52,4 +53,10 @@ async function trackApplicationHandler(
   }
 }
 
-export const GET = ensureDBConnection(trackApplicationHandler);
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ trackingId: string }> }
+) {
+  await ensureDBConnection();
+  return trackApplicationHandler(request, context);
+}

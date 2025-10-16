@@ -39,14 +39,13 @@ async function adminLoginHandler(request: NextRequest) {
     adminUser.last_login = new Date();
     await adminUser.save();
 
-    // Generate token
-    const token = generateToken({
-      userId: adminUser._id,
+    // Generate token - create a user-like object for token generation
+    const userForToken = {
+      _id: adminUser._id,
       email: adminUser.email,
-      role: 'admin',
-      adminRole: adminUser.role,
-      permissions: adminUser.permissions
-    });
+      role: 'admin' as const
+    } as any;
+    const token = generateToken(userForToken);
 
     // Remove password from response
     const adminResponse = {
@@ -80,4 +79,7 @@ async function adminLoginHandler(request: NextRequest) {
   }
 }
 
-export const POST = ensureDBConnection(adminLoginHandler);
+export async function POST(request: NextRequest) {
+  await ensureDBConnection();
+  return adminLoginHandler(request);
+}
