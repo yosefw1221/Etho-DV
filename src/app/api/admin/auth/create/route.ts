@@ -2,29 +2,117 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ensureDBConnection } from '@/middleware/dbConnection';
 import AdminUser from '@/models/AdminUser';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { z } from 'zod';
+
+const JWT_SECRET = process.env.NEXTAUTH_SECRET || 'your-secret-key';
+const SUPER_ADMIN_SECRET = process.env.SUPER_ADMIN_SECRET; // For initial setup only
 
 const createAdminSchema = z.object({
   email: z.string().email('Invalid email format'),
   password: z.string().min(4, 'Password must be at least 4 characters'),
   name: z.string().min(1, 'Name is required'),
   role: z.enum(['admin', 'super_admin']).optional().default('admin'),
-  permissions: z.array(z.string()).optional().default([
-    'view_forms',
-    'approve_forms',
-    'decline_forms',
-    'complete_forms',
-    'bulk_operations',
-    'view_analytics'
-  ]),
+  permissions: z
+    .array(z.string())
+    .optional()
+    .default([
+      'view_forms',
+      'approve_forms',
+      'decline_forms',
+      'complete_forms',
+      'bulk_operations',
+      'view_analytics',
+    ]),
+  setup_secret: z.string().optional(), // Only for initial super admin creation
 });
 
 async function createAdminHandler(request: NextRequest) {
   try {
+    // Get authorization header
+    const authHeader = request.headers.get('authorization');
+    const setupSecret = request.headers.get('x-setup-secret');
+
     const body = await request.json();
     const validatedData = createAdminSchema.parse(body);
 
     const { email, password, name, role, permissions } = validatedData;
+
+    // Count existing super admins
+    const superAdminCount = await AdminUser.countDocuments({ role: 'super_admin', is_active: true });
+
+    // Authorization logic
+    let isAuthorized = false;
+    let requestingAdmin = null;
+
+    // Case 1: Initial setup - no super admins exist
+    if (superAdminCount === 0) {
+      // Allow creation with setup secret or if creating regular admin
+      if (role === 'super_admin') {
+        // Require setup secret for first super admin
+        if (!SUPER_ADMIN_SECRET || !setupSecret || setupSecret !== SUPER_ADMIN_SECRET) {
+          return NextResponse.json(
+            { error: 'Invalid or missing setup secret. Set SUPER_ADMIN_SECRET environment variable.' },
+            { status: 403 }
+          );
+        }
+      }
+      isAuthorized = true;
+    } else {
+      // Case 2: Super admins exist - require authentication
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return NextResponse.json(
+          { error: 'Unauthorized. Admin authentication required.' },
+          { status: 401 }
+        );
+      }
+
+      // Verify token
+      const token = authHeader.substring(7);
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET) as any;
+        
+        // Get the requesting admin user
+        requestingAdmin = await AdminUser.findById(decoded.userId);
+        
+        if (!requestingAdmin || !requestingAdmin.is_active) {
+          return NextResponse.json(
+            { error: 'Unauthorized. Invalid admin credentials.' },
+            { status: 401 }
+          );
+        }
+
+        // Only super admins can create new admins
+        if (requestingAdmin.role !== 'super_admin') {
+          return NextResponse.json(
+            { error: 'Forbidden. Only super admins can create admin users.' },
+            { status: 403 }
+          );
+        }
+
+        // Only super admins can create other super admins
+        if (role === 'super_admin' && requestingAdmin.role !== 'super_admin') {
+          return NextResponse.json(
+            { error: 'Forbidden. Only super admins can create other super admins.' },
+            { status: 403 }
+          );
+        }
+
+        isAuthorized = true;
+      } catch (error) {
+        return NextResponse.json(
+          { error: 'Unauthorized. Invalid or expired token.' },
+          { status: 401 }
+        );
+      }
+    }
+
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { error: 'Unauthorized access' },
+        { status: 403 }
+      );
+    }
 
     // Check if admin user already exists
     const existingAdmin = await AdminUser.findOne({ email });
@@ -58,14 +146,17 @@ async function createAdminHandler(request: NextRequest) {
       role: adminUser.role,
       permissions: adminUser.permissions,
       is_active: adminUser.is_active,
-      created_at: adminUser.created_at
+      created_at: adminUser.created_at,
     };
 
-    return NextResponse.json({
-      success: true,
-      message: 'Admin user created successfully',
-      admin: adminResponse
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        success: true,
+        message: 'Admin user created successfully',
+        admin: adminResponse,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Create admin error:', error);
 
@@ -87,4 +178,3 @@ export async function POST(request: NextRequest) {
   await ensureDBConnection();
   return createAdminHandler(request);
 }
-
