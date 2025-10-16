@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ensureDBConnection } from '@/middleware/dbConnection';
+import { withDBConnection } from '@/middleware/dbConnection';
 import { requireAdmin, AuthenticatedAdminRequest } from '@/middleware/adminAuth';
 import Form from '@/models/Form';
 import User from '@/models/User';
@@ -143,5 +143,5 @@ async function updateFormStatusHandler(request: AuthenticatedAdminRequest) {
   }
 }
 
-export const GET = ensureDBConnection(requireAdmin(getFormsHandler));
-export const PUT = ensureDBConnection(requireAdmin(updateFormStatusHandler));
+export const GET = withDBConnection(requireAdmin(getFormsHandler));
+export const PUT = withDBConnection(requireAdmin(updateFormStatusHandler));
