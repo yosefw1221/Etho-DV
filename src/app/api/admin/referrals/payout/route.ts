@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ensureDBConnection } from '@/middleware/dbConnection';
 import { requireAdmin, AuthenticatedAdminRequest } from '@/middleware/adminAuth';
 import User from '@/models/User';
 import Referral from '@/models/Referral';
@@ -103,5 +102,5 @@ async function processPayoutHandler(request: AuthenticatedAdminRequest) {
   }
 }
 
-export const POST = requireAdmin(ensureDBConnection(processPayoutHandler));
+export const POST = requireAdmin(processPayoutHandler);
 

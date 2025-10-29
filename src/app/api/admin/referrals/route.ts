@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ensureDBConnection } from '@/middleware/dbConnection';
 import { requireAdmin, AuthenticatedAdminRequest } from '@/middleware/adminAuth';
 import User from '@/models/User';
 import Referral from '@/models/Referral';
@@ -32,7 +31,7 @@ async function getReferralPayoutRequestsHandler(request: AuthenticatedAdminReque
 
     // Group by referrer for summary
     const referrerMap = new Map();
-    referrals.forEach(ref => {
+    referrals.forEach((ref: any) => {
       const referrerId = ref.referrer_id._id.toString();
       if (!referrerMap.has(referrerId)) {
         referrerMap.set(referrerId, {
@@ -94,5 +93,5 @@ async function getReferralPayoutRequestsHandler(request: AuthenticatedAdminReque
   }
 }
 
-export const GET = requireAdmin(ensureDBConnection(getReferralPayoutRequestsHandler));
+export const GET = requireAdmin(getReferralPayoutRequestsHandler);
 
