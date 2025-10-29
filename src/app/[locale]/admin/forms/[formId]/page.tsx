@@ -22,6 +22,7 @@ import {
   Heart,
   AlertCircle,
 } from 'lucide-react';
+import StatusChangeForm from '@/components/admin/StatusChangeForm';
 
 interface FamilyMember {
   relationship_type: string;
@@ -257,6 +258,16 @@ export default function FormDetailPage() {
               </p>
             </div>
           </div>
+
+          {/* Status Management Section */}
+          <StatusChangeForm
+            formId={formId}
+            currentStatus={formData.processing_status}
+            currentPaymentStatus={formData.payment_status}
+            currentNotes={formData.admin_notes}
+            currentCompletionDoc={formData.completion_document_url}
+            onStatusUpdated={fetchFormDetails}
+          />
 
           {/* Main Applicant Photo */}
           {formData.photo_url && (

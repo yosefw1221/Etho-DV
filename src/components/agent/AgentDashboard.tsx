@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import { AgentStats, getNextTierProgress, AGENT_TIERS } from '@/types/agent';
@@ -11,10 +10,11 @@ import { cn } from '@/lib/utils';
 interface AgentDashboardProps {
   stats: AgentStats;
   locale: string;
+  onLogout?: () => void;
 }
 
-const AgentDashboard: React.FC<AgentDashboardProps> = ({ stats, locale }) => {
-  const t = useTranslations();
+const AgentDashboard: React.FC<AgentDashboardProps> = ({ stats, locale, onLogout }) => {
+  // const t = useTranslations(); // Temporarily disabled for testing
   
   const tierProgress = getNextTierProgress(stats.total_submissions);
   const createLocalizedPath = (path: string) => 

@@ -23,6 +23,7 @@ const formSubmissionSchema = z.object({
     education_level: z.string().min(1, 'Education level is required'),
     occupation: z.string().optional(),
     marital_status: z.enum(['Single', 'Married']),
+    photo_url: z.string().optional(), // Photo URL for main applicant
   }),
   family_members: z
     .array(
@@ -37,6 +38,7 @@ const formSubmissionSchema = z.object({
         place_of_birth: z.string().min(1, 'Place of birth is required'),
         gender: z.enum(['Male', 'Female']),
         country_of_birth: z.string().min(1, 'Country of birth is required'),
+        photo_url: z.string().optional(), // Photo URL for family member
       })
     )
     .optional(),
