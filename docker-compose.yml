@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: etho-dv-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: etho-dv
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - etho-dv-network
+
+  # Next.js Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: etho-dv-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongodb:27017/etho-dv
+    env_file:
+      - .env.local
+    depends_on:
+      - mongodb
+    networks:
+      - etho-dv-network
+    volumes:
+      # Mount uploads directory for persistent storage (development mode)
+      - ./public/uploads:/app/public/uploads
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  etho-dv-network:
+    driver: bridge
