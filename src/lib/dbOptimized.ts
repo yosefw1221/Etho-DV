@@ -1,12 +1,8 @@
 import mongoose from 'mongoose';
 
+// Don't validate at module load - only when connecting
+// This allows the module to be imported during Next.js build
 const MONGODB_URI = process.env.MONGODB_URI;
-
-if (!MONGODB_URI) {
-  throw new Error(
-    'Please define the MONGODB_URI environment variable inside .env.local'
-  );
-}
 
 // Optimized connection options for Next.js
 const mongooseOptions = {
@@ -51,8 +47,17 @@ async function connectDB(): Promise<typeof mongoose> {
 
   // Create connection promise if it doesn't exist
   if (!cached!.promise) {
+    // Validate MONGODB_URI only when actually connecting
+    if (!MONGODB_URI) {
+      throw new Error(
+        'Please define the MONGODB_URI environment variable. ' +
+        'In Docker/Coolify: set it in the environment variables. ' +
+        'In local development: add it to .env.local'
+      );
+    }
+
     cached!.promise = mongoose
-      .connect(MONGODB_URI!, mongooseOptions)
+      .connect(MONGODB_URI, mongooseOptions)
       .then((mongoose) => {
         console.log('✅ MongoDB connected successfully');
         return mongoose;
@@ -111,9 +116,7 @@ export async function disconnectDB(): Promise<void> {
   }
 }
 
-// Auto-connect in production for better cold start performance
-if (process.env.NODE_ENV === 'production') {
-  connectDB().catch(console.error);
-}
+// Don't auto-initialize - let each API route connect as needed
+// This prevents connection attempts during Next.js build process
 
 export default connectDB;
