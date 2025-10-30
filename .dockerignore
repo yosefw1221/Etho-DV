@@ -3,6 +3,7 @@ node_modules
 npm-debug.log
 yarn-error.log
 yarn-debug.log
+package-lock.json
 
 # Build output
 .next
@@ -46,3 +47,8 @@ AGENT_DASHBOARD_IMPLEMENTATION.md
 # Uploads (local development files)
 public/uploads/*
 !public/uploads/.gitkeep
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore

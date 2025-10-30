@@ -6,8 +6,16 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Copy package files
-COPY package.json yarn.lock* ./
-RUN yarn --frozen-lockfile
+COPY package.json package-lock.json* yarn.lock* ./
+
+# Install dependencies using npm (more reliable in Docker than yarn)
+RUN if [ -f yarn.lock ]; then \
+      yarn --frozen-lockfile --network-timeout 100000; \
+    elif [ -f package-lock.json ]; then \
+      npm ci --only=production --ignore-scripts; \
+    else \
+      npm install --only=production --ignore-scripts; \
+    fi
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
@@ -17,11 +25,12 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Set environment variable for build
+# Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
 
 # Build the application
-RUN yarn build
+RUN npm run build
 
 # Stage 3: Runner (Production)
 FROM node:20-alpine AS runner
