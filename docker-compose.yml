@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # MongoDB Database
+  # MongoDB Database (optional - remove if using external MongoDB Atlas)
   mongodb:
     image: mongo:7.0
     container_name: etho-dv-mongodb
@@ -14,6 +14,8 @@ services:
       - mongodb_data:/data/db
     networks:
       - etho-dv-network
+    profiles:
+      - with-mongodb
 
   # Next.js Application
   app:
@@ -23,22 +25,37 @@ services:
     container_name: etho-dv-app
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:3000"
     environment:
-      - NODE_ENV=production
-      - MONGODB_URI=mongodb://mongodb:27017/etho-dv
-    env_file:
-      - .env.local
-    depends_on:
-      - mongodb
+      # All environment variables will be injected by Coolify
+      - NODE_ENV=${NODE_ENV:-production}
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - SUPER_ADMIN_SECRET=${SUPER_ADMIN_SECRET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_BOT_ID=${TELEGRAM_BOT_ID}
+      - DO_SPACES_ENDPOINT=${DO_SPACES_ENDPOINT}
+      - DO_SPACES_KEY=${DO_SPACES_KEY}
+      - DO_SPACES_SECRET=${DO_SPACES_SECRET}
+      - DO_SPACES_BUCKET=${DO_SPACES_BUCKET}
+      - DO_SPACES_REGION=${DO_SPACES_REGION}
+      - TELEBIRR_API_KEY=${TELEBIRR_API_KEY}
+      - CBE_API_KEY=${CBE_API_KEY}
+      - ABYSSINIA_API_KEY=${ABYSSINIA_API_KEY}
     networks:
       - etho-dv-network
     volumes:
       # Mount uploads directory for persistent storage (development mode)
-      - ./public/uploads:/app/public/uploads
+      - uploads_data:/app/public/uploads
 
 volumes:
   mongodb_data:
+    driver: local
+  uploads_data:
     driver: local
 
 networks:
