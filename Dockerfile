@@ -8,13 +8,14 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Copy package files (for caching)
-COPY package.json package-lock.json* ./
+COPY package.json ./
+COPY package-lock.json ./
 
 # Install ALL dependencies including devDependencies (needed for build)
 # Using npm ci without --production flag to include devDependencies
-RUN npm ci --loglevel verbose && \
-    echo "Verifying tailwindcss installation:" && \
-    ls -la node_modules/tailwindcss 2>/dev/null || echo "ERROR: tailwindcss not found!"
+RUN npm ci && \
+    echo "✓ Dependencies installed. Verifying tailwindcss:" && \
+    ls node_modules/tailwindcss/package.json && echo "✓ tailwindcss found"
 
 
 # ------------------------------------------------------------
