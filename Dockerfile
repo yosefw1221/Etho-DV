@@ -32,9 +32,11 @@ COPY . .
 # Build environment variables
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+# Dummy MongoDB URI for build - real one injected at runtime
+ENV MONGODB_URI=mongodb://dummy:27017/etho-dv
 
-# Inline dummy env to satisfy env-dependent builds
-RUN MONGODB_URI="mongodb://dummy:27017/etho-dv" npm run build
+# Build the application
+RUN npm run build 2>&1 || (cat .next/trace || echo "Build failed, check logs above" && exit 1)
 
 
 # ------------------------------------------------------------
@@ -59,9 +61,6 @@ COPY --from=builder /app/.next/static ./.next/static
 
 # Create uploads directory for runtime file storage
 RUN mkdir -p ./public/uploads && chown -R nextjs:nodejs ./public/uploads
-
-# Remove dev dependencies and clean cache
-RUN npm prune --production && npm cache clean --force
 
 # Switch to non-root user
 USER nextjs
