@@ -67,11 +67,22 @@ COPY --from=builder /app/.next/static ./.next/static
 # Create uploads directory for runtime file storage
 RUN mkdir -p ./public/uploads && chown -R nextjs:nodejs ./public/uploads
 
+# Create environment check script (before switching to non-root user)
+RUN echo '#!/bin/sh' > /app/check-env.sh && \
+    echo 'echo "=== Environment Check ==="' >> /app/check-env.sh && \
+    echo 'if [ -z "$MONGODB_URI" ]; then echo "❌ MONGODB_URI not set"; else echo "✓ MONGODB_URI is set"; fi' >> /app/check-env.sh && \
+    echo 'if [ -z "$NEXTAUTH_SECRET" ]; then echo "❌ NEXTAUTH_SECRET not set"; else echo "✓ NEXTAUTH_SECRET is set"; fi' >> /app/check-env.sh && \
+    echo 'if [ -z "$NEXTAUTH_URL" ]; then echo "❌ NEXTAUTH_URL not set"; else echo "✓ NEXTAUTH_URL is set"; fi' >> /app/check-env.sh && \
+    echo 'echo "========================="' >> /app/check-env.sh && \
+    echo 'exec node server.js' >> /app/check-env.sh && \
+    chmod +x /app/check-env.sh && \
+    chown nextjs:nodejs /app/check-env.sh
+
 # Switch to non-root user
 USER nextjs
 
 # Expose app port
 EXPOSE 3000
 
-# Start the Next.js server
-CMD ["node", "server.js"]
+# Start the Next.js server with environment check
+CMD ["/app/check-env.sh"]
