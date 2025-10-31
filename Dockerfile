@@ -8,16 +8,13 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Copy package files (for caching)
-COPY package.json package-lock.json* yarn.lock* ./
+COPY package.json package-lock.json* ./
 
-# Install all dependencies (build + runtime)
-RUN if [ -f yarn.lock ]; then \
-      yarn install --frozen-lockfile --network-timeout 100000; \
-    elif [ -f package-lock.json ]; then \
-      npm ci; \
-    else \
-      npm install; \
-    fi
+# Install ALL dependencies including devDependencies (needed for build)
+# Using npm ci without --production flag to include devDependencies
+RUN npm ci --loglevel verbose && \
+    echo "Verifying tailwindcss installation:" && \
+    ls -la node_modules/tailwindcss 2>/dev/null || echo "ERROR: tailwindcss not found!"
 
 
 # ------------------------------------------------------------
