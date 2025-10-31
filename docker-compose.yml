@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # MongoDB Database (optional - remove if using external MongoDB Atlas)
+  # MongoDB Database
   mongodb:
     image: mongo:7.0
     container_name: etho-dv-mongodb
@@ -14,8 +14,6 @@ services:
       - mongodb_data:/data/db
     networks:
       - etho-dv-network
-    profiles:
-      - with-mongodb
 
   # Next.js Application
   app:
@@ -25,7 +23,7 @@ services:
     container_name: etho-dv-app
     restart: unless-stopped
     ports:
-      - "${PORT:-3000}:3000"
+      - "3000:3000"
     environment:
       # All environment variables will be injected by Coolify
       - NODE_ENV=${NODE_ENV:-production}
