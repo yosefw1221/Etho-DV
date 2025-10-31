@@ -12,9 +12,10 @@ COPY package.json ./
 COPY yarn.lock ./
 
 # Install ALL dependencies including devDependencies (needed for build)
-RUN yarn install --frozen-lockfile && \
-    echo "✓ Dependencies installed. Verifying tailwindcss:" && \
-    ls node_modules/tailwindcss/package.json && echo "✓ tailwindcss found"
+# Use --production=false to ensure devDependencies are installed
+RUN yarn install --frozen-lockfile --production=false && \
+    echo "✓ Dependencies installed. Listing build tools:" && \
+    ls node_modules | grep -E "tailwind|postcss|autoprefixer" || echo "Note: Some build tools may not be visible yet"
 
 
 # ------------------------------------------------------------
@@ -25,6 +26,12 @@ WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# Verify critical build dependencies are present
+RUN echo "Verifying build dependencies..." && \
+    test -d node_modules/tailwindcss || (echo "ERROR: tailwindcss not found!" && exit 1) && \
+    test -d node_modules/postcss || (echo "ERROR: postcss not found!" && exit 1) && \
+    echo "✓ All build dependencies verified"
 
 # Build environment variables
 ENV NEXT_TELEMETRY_DISABLED=1
