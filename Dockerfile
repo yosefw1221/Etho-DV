@@ -32,11 +32,13 @@ COPY . .
 # Build environment variables
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-# Dummy MongoDB URI for build - real one injected at runtime
+# Dummy env vars for build - real ones injected at runtime
 ENV MONGODB_URI=mongodb://dummy:27017/etho-dv
+ENV NEXTAUTH_SECRET=build-time-dummy-secret-at-least-32-chars-long
+ENV NEXTAUTH_URL=http://localhost:3000
 
-# Build the application
-RUN npm run build 2>&1 || (cat .next/trace || echo "Build failed, check logs above" && exit 1)
+# Build the application with verbose output
+RUN set -x && npm run build
 
 
 # ------------------------------------------------------------
