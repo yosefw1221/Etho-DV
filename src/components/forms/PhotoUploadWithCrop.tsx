@@ -52,6 +52,8 @@ const PhotoUploadWithCrop: React.FC<PhotoUploadWithCropProps> = ({
 
   // Check for cropped image on mount and when component updates
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const croppedImage = sessionStorage.getItem('croppedImage');
     const metadata = sessionStorage.getItem('cropMetadata');
 

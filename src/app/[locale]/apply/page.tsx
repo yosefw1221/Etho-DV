@@ -613,10 +613,10 @@ const loadSavedStep = (): number => {
 
 export default function ApplyPage({ params }: ApplyPageProps) {
   const [locale, setLocale] = useState<string>('en');
-  const [currentStep, setCurrentStep] = useState(() => loadSavedStep());
+  const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [formData, setFormData] = useState<FormData>(() => loadSavedFormData());
+  const [formData, setFormData] = useState<FormData>(getDefaultFormData());
   const [validationErrors, setValidationErrors] = useState<{
     [key: string]: string;
   }>({});
@@ -632,6 +632,14 @@ export default function ApplyPage({ params }: ApplyPageProps) {
   
   // Success modal states
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  // Load saved form data and step from localStorage on mount (client-side only)
+  useEffect(() => {
+    const savedStep = loadSavedStep();
+    const savedData = loadSavedFormData();
+    setCurrentStep(savedStep);
+    setFormData(savedData);
+  }, []);
 
   // Calculate age from birth date
   const calculateAge = (birthDate: string): number => {

@@ -28,6 +28,8 @@ COPY . .
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+# Dummy MongoDB URI for build - real one injected at runtime
+ENV MONGODB_URI=mongodb://dummy:27017/etho-dv
 
 # Build the application
 RUN npm run build
