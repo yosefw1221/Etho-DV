@@ -36,13 +36,12 @@ RUN echo "Verifying build dependencies..." && \
 # Build environment variables
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-# Dummy env vars for build - real ones injected at runtime
-ENV MONGODB_URI=mongodb://dummy:27017/etho-dv
-ENV NEXTAUTH_SECRET=build-time-dummy-secret-at-least-32-chars-long
-ENV NEXTAUTH_URL=http://localhost:3000
 
-# Build the application with verbose output
-RUN set -x && npm run build
+# Environment variables are injected by Coolify at build time
+# No need for dummy values - Coolify provides real ones via build args
+
+# Build the application
+RUN npm run build
 
 
 # ------------------------------------------------------------
