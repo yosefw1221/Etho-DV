@@ -9,11 +9,10 @@ WORKDIR /app
 
 # Copy package files (for caching)
 COPY package.json ./
-COPY package-lock.json ./
+COPY yarn.lock ./
 
 # Install ALL dependencies including devDependencies (needed for build)
-# Using npm ci without --production flag to include devDependencies
-RUN npm ci && \
+RUN yarn install --frozen-lockfile && \
     echo "✓ Dependencies installed. Verifying tailwindcss:" && \
     ls node_modules/tailwindcss/package.json && echo "✓ tailwindcss found"
 
