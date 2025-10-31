@@ -8,13 +8,13 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json* yarn.lock* ./
 
-# Install dependencies using npm (more reliable in Docker than yarn)
+# Install ALL dependencies (including devDependencies needed for build)
 RUN if [ -f yarn.lock ]; then \
       yarn --frozen-lockfile --network-timeout 100000; \
     elif [ -f package-lock.json ]; then \
-      npm ci --only=production --ignore-scripts; \
+      npm ci; \
     else \
-      npm install --only=production --ignore-scripts; \
+      npm install; \
     fi
 
 # Stage 2: Builder
