@@ -1,20 +1,6 @@
 version: '3.8'
 
 services:
-  # MongoDB Database
-  mongodb:
-    image: mongo:7.0
-    container_name: etho-dv-mongodb
-    restart: unless-stopped
-    environment:
-      MONGO_INITDB_DATABASE: etho-dv
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb_data:/data/db
-    networks:
-      - etho-dv-network
-
   # Next.js Application
   app:
     build:
@@ -51,8 +37,6 @@ services:
       - uploads_data:/app/public/uploads
 
 volumes:
-  mongodb_data:
-    driver: local
   uploads_data:
     driver: local
 
