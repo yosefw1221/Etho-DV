@@ -20,6 +20,56 @@ const ModernLoginForm: React.FC<ModernLoginFormProps> = ({ locale }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
+  // Check for OAuth errors in URL
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+
+    if (error) {
+      let errorMessage = 'Authentication failed. Please try again.';
+
+      switch (error) {
+        case 'OAuthSignin':
+          errorMessage = 'Error constructing OAuth sign in URL. Please check your OAuth configuration.';
+          break;
+        case 'OAuthCallback':
+          errorMessage = 'Error handling OAuth callback. Please try again.';
+          break;
+        case 'OAuthCreateAccount':
+          errorMessage = 'Could not create OAuth account. Please try again.';
+          break;
+        case 'EmailCreateAccount':
+          errorMessage = 'Could not create email account. Please try again.';
+          break;
+        case 'Callback':
+          errorMessage = 'Error in callback handler. Please try again.';
+          break;
+        case 'OAuthAccountNotLinked':
+          errorMessage = 'This email is already registered with a different sign-in method. Please use your original sign-in method.';
+          break;
+        case 'EmailSignin':
+          errorMessage = 'Failed to send sign-in email. Please try again.';
+          break;
+        case 'CredentialsSignin':
+          errorMessage = 'Invalid credentials. Please check your email and password.';
+          break;
+        case 'SessionRequired':
+          errorMessage = 'Please sign in to access this page.';
+          break;
+        case 'AccessDenied':
+          errorMessage = 'Access denied. You may need to grant permissions or contact support if this is a Google Workspace account.';
+          break;
+        default:
+          errorMessage = `Authentication error: ${error}`;
+      }
+
+      setErrors({ general: errorMessage });
+
+      // Clear error from URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
