@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 // Don't validate at module load - only when connecting
 // This allows the module to be imported during Next.js build
 const MONGODB_URI = process.env.MONGODB_URI;
-
+//dwgw0gwcwgg0cckgoos4sg8s.34.46.176.18.sslip.io
 // Optimized connection options for Next.js
 const mongooseOptions = {
   bufferCommands: false,
@@ -51,8 +51,8 @@ async function connectDB(): Promise<typeof mongoose> {
     if (!MONGODB_URI) {
       throw new Error(
         'Please define the MONGODB_URI environment variable. ' +
-        'In Docker/Coolify: set it in the environment variables. ' +
-        'In local development: add it to .env.local'
+          'In Docker/Coolify: set it in the environment variables. ' +
+          'In local development: add it to .env.local'
       );
     }
 
