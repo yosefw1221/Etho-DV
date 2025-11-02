@@ -80,6 +80,12 @@ const authOptions: NextAuthOptions = {
 
   callbacks: {
     async signIn({ user, account, profile }) {
+      // Log detailed OAuth info for debugging
+      console.log('=== OAuth Sign In Attempt ===');
+      console.log('Provider:', account?.provider);
+      console.log('User email:', user.email);
+      console.log('Account:', JSON.stringify(account, null, 2));
+
       try {
         await connectDB();
 

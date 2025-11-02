@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { Eye, EyeOff, Mail, Lock, User, Phone, Building, ArrowRight, CheckCircle, UserCheck, Gift } from 'lucide-react';
+import TelegramLoginButton from './TelegramLoginButton';
 
 interface ModernRegisterFormProps {
   locale: string;
@@ -24,9 +25,57 @@ const ModernRegisterForm: React.FC<ModernRegisterFormProps> = ({ locale }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Capture referral code from URL
+  // Check for OAuth errors and capture referral code from URL
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
+
+    // Check for OAuth errors
+    const error = urlParams.get('error');
+    if (error) {
+      let errorMessage = 'Authentication failed. Please try again.';
+
+      switch (error) {
+        case 'OAuthSignin':
+          errorMessage = 'Error constructing OAuth sign in URL. Please check your OAuth configuration.';
+          break;
+        case 'OAuthCallback':
+          errorMessage = 'Error handling OAuth callback. Please try again.';
+          break;
+        case 'OAuthCreateAccount':
+          errorMessage = 'Could not create OAuth account. Please try again.';
+          break;
+        case 'EmailCreateAccount':
+          errorMessage = 'Could not create email account. Please try again.';
+          break;
+        case 'Callback':
+          errorMessage = 'Error in callback handler. Please try again.';
+          break;
+        case 'OAuthAccountNotLinked':
+          errorMessage = 'This email is already registered with a different sign-in method. Please use your original sign-in method.';
+          break;
+        case 'EmailSignin':
+          errorMessage = 'Failed to send sign-in email. Please try again.';
+          break;
+        case 'CredentialsSignin':
+          errorMessage = 'Invalid credentials. Please check your email and password.';
+          break;
+        case 'SessionRequired':
+          errorMessage = 'Please sign in to access this page.';
+          break;
+        case 'AccessDenied':
+          errorMessage = 'Access denied. You may need to grant permissions or contact support if this is a Google Workspace account.';
+          break;
+        default:
+          errorMessage = `Authentication error: ${error}`;
+      }
+
+      setErrors({ general: errorMessage });
+
+      // Clear error from URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+
+    // Capture referral code from URL
     const refCode = urlParams.get('ref');
     if (refCode) {
       setFormData(prev => ({ ...prev, referralCode: refCode }));
@@ -512,16 +561,10 @@ const ModernRegisterForm: React.FC<ModernRegisterFormProps> = ({ locale }) => {
               <span className="text-gray-700 font-medium">Continue with Google</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => signIn('telegram', { callbackUrl: `/${locale}/dashboard` })}
-              className="w-full flex items-center justify-center px-6 py-3 border border-gray-300 rounded-xl shadow-sm bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
-            >
-              <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="#0088cc">
-                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.5 1.201-.82 1.23-.697.064-1.226-.461-1.901-.903-1.056-.692-1.653-1.123-2.678-1.799-1.185-.781-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.139-5.062 3.345-.479.329-.913.489-1.302.481-.428-.008-1.252-.241-1.865-.44-.752-.244-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
-              </svg>
-              <span className="text-gray-700 font-medium">Continue with Telegram</span>
-            </button>
+            {/* Telegram Login Widget */}
+            <div className="w-full flex items-center justify-center px-6 py-3 border border-gray-300 rounded-xl shadow-sm bg-white">
+              <TelegramLoginButton locale={locale} />
+            </div>
           </div>
         </div>
 
