@@ -100,12 +100,10 @@ Form state structure defined in `src/types/form.ts` as `DVFormData` interface.
   - Client-side cropping to 400x400 using `react-image-crop`
 - **PhotoUploadWithCrop.tsx**: Main photo upload component with client-side cropping
 - **Storage options**:
-  - Production: DigitalOcean Spaces (S3-compatible) via `src/lib/storage.ts`
-    - ACL: public-read
-    - Path structure: `photos/{userId}/{formId}/{personType}-{timestamp}-{randomId}.jpg`
-  - Development: Local filesystem via `src/lib/simpleStorage.ts`
+  - Local filesystem via `src/lib/simpleStorage.ts`
     - Photos stored in `public/uploads/`
     - Accessible via `/uploads/{filename}`
+    - Path structure: `photos/{userId}/{formId}/{personType}-{timestamp}-{randomId}.jpg`
 
 #### API Route Structure
 ```
@@ -201,13 +199,6 @@ Required variables in `.env.local` (see `.env.example` for template):
 - `TELEGRAM_BOT_ID`: Telegram bot ID for OAuth
 - `TELEGRAM_BOT_TOKEN`: Telegram bot token from BotFather
 
-**Storage (Production):**
-- `DO_SPACES_ENDPOINT`: DigitalOcean Spaces endpoint (e.g., `https://nyc3.digitaloceanspaces.com`)
-- `DO_SPACES_KEY`: Spaces access key
-- `DO_SPACES_SECRET`: Spaces secret key
-- `DO_SPACES_BUCKET`: Bucket name
-- `DO_SPACES_REGION`: Region code (e.g., `nyc3`)
-
 **Payment APIs (Optional):**
 - `TELEBIRR_API_KEY`: TeleBirr payment gateway API key
 - `CBE_API_KEY`: Commercial Bank of Ethiopia API key
@@ -257,8 +248,7 @@ Required variables in `.env.local` (see `.env.example` for template):
 Located in `src/lib/`:
 - `auth.ts`: JWT and password hashing utilities
 - `mongodb.ts`: Database connection with caching
-- `storage.ts`: DigitalOcean Spaces (S3) integration
-- `simpleStorage.ts`: Local filesystem storage for development
+- `simpleStorage.ts`: Local filesystem storage
 - `imageProcessor.ts`: Server-side image processing (Sharp)
 - `clientImageProcessor.ts`: Browser-based image processing (Canvas)
 - `validation.ts`: Zod schemas and validation helpers
@@ -338,9 +328,8 @@ const user = await User.findById(userId);
 
 2. **JWT Secret Configuration**: The JWT secret falls back to `NEXTAUTH_SECRET` environment variable if `JWT_SECRET` is not set. Ensure `NEXTAUTH_SECRET` is properly configured.
 
-3. **Storage Environment**: The application supports two storage backends:
-   - Production should use `storage.ts` (DigitalOcean Spaces)
-   - Development can use `simpleStorage.ts` (local filesystem)
-   - Ensure the correct service is imported based on your environment
+3. **Storage**: The application uses local filesystem storage via `simpleStorage.ts`:
+   - Photos stored in `public/uploads/`
+   - Accessible via `/uploads/{filename}`
 
 4. **Photo Dimensions**: The application enforces 600x600 to 1200x1200 pixel uploads but crops to 400x400. This is intentional to meet DV lottery requirements while maintaining quality.
